@@ -19,6 +19,8 @@ OBJECT_DECLARE_SIMPLE_TYPE(STM32H750State, STM32H750_SOC)
 #define SRAM4_SIZE (64 * 1024)
 #define AXISRAM_BASE 0x24000000
 #define AXISRAM_SIZE (512 * 1024)
+#define QSPI_PSRAM_BASE 0x90000000
+#define QSPI_PSRAM_SIZE (8 * 1024 * 1024)
 
 
 struct STM32H750State {
@@ -31,6 +33,7 @@ struct STM32H750State {
     MemoryRegion sram1;
     MemoryRegion sram4;
     MemoryRegion axisram;
+    MemoryRegion qspi_psram;
 
     MemoryRegion flash_alias;
 

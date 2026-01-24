@@ -51,6 +51,9 @@ static void stm32h750_soc_realize(DeviceState *dev_soc, Error **errp)
     memory_region_init_alias(&s->flash_alias, OBJECT(dev_soc), "flash_alias", &s->flash, 0, FLASH_SIZE);
     memory_region_add_subregion(system_memory, 0, &s->flash_alias);
 
+    memory_region_init_ram(&s->qspi_psram, OBJECT(dev_soc), "qspi_psram", QSPI_PSRAM_SIZE, &error_fatal);
+    memory_region_add_subregion(system_memory, QSPI_PSRAM_BASE, &s->qspi_psram);
+
     DeviceState *dev = DEVICE(&s->usart1);
     qdev_prop_set_chr(dev, "chardev", serial_hd(0));
     if (!sysbus_realize(SYS_BUS_DEVICE(&s->usart1), errp))
@@ -60,6 +63,7 @@ static void stm32h750_soc_realize(DeviceState *dev_soc, Error **errp)
     sysbus_mmio_map(busdev, 0, 0x40011000);
     sysbus_connect_irq(busdev, 0, qdev_get_gpio_in(armv7m, 37));
 
+    create_unimplemented_device("RCC", 0x58024400, 0x400);
 
 }
 
