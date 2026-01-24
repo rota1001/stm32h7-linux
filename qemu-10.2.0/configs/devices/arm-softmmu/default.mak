@@ -1,3 +1,6 @@
+CONFIG_ARM_V7M=y
+CONFIG_STM32H750_SOC=y
+CONFIG_STM32H750_BOARD=y
 # Default configuration for arm-softmmu
 
 # Uncomment the following lines to disable these optional devices:
