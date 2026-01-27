@@ -64,6 +64,7 @@ static void stm32h750_soc_realize(DeviceState *dev_soc, Error **errp)
     sysbus_connect_irq(busdev, 0, qdev_get_gpio_in(armv7m, 37));
 
     create_unimplemented_device("RCC", 0x58024400, 0x400);
+    create_unimplemented_device("GPIOA", 0x58020000, 0x400);
 
 }
 

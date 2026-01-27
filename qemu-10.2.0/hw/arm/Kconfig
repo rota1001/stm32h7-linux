@@ -250,6 +250,7 @@ config STM32H750_BOARD
     default y
     depends on TCG && ARM
     select STM32H750_SOC
+    select GENERIC_LOADER
 
 config STRONGARM
     bool
