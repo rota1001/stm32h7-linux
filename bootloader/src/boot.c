@@ -39,15 +39,10 @@ __attribute__((section(".reset_isr"))) void reset_isr()
     rcc_init();
     qspi_init();
     sram_init();
+    enable_icache();
     usart_init(115200);
-
-    usart_putc('=');
-    
-    for (int i = 0; i < 100; i++) {
-        print_uint(((unsigned long *)0x90000000)[i]);
-        usart_putc('\r');
-        usart_putc('\n');
-    }
+    void (*kernel)(unsigned long, unsigned long, unsigned long) =(void (*)(unsigned long, unsigned long, unsigned long))0x90000001;
+    kernel(0, ~0UL, 0x90400000);
 
     while (1)
         ;
