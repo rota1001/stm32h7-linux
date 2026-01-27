@@ -1,1 +1,3 @@
 bootloader/build/*
+.gdb_history
+build/*
