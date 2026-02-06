@@ -11,13 +11,17 @@ qemu: qemu-10.2.0/build/qemu-system-arm
 	qemu-10.2.0/build/qemu-system-arm -machine stm32h750 -s  \
 	-kernel $(BOOTLOADER_BIN) -serial stdio -display none \
 	-device loader,file=linux-6.18.7/arch/arm/boot/xipImage,addr=0x90000000 \
-	-device loader,file=linux-6.18.7/arch/arm/boot/dts/st/stm32h750vbt6.dtb,addr=0x90400000
+	-device loader,file=linux-6.18.7/arch/arm/boot/dts/st/stm32h750vbt6.dtb,addr=0x90400000 \
+	-device loader,file=rootfs.img,addr=0x90600000
 
 debug: qemu-10.2.0/build/qemu-system-arm
+	foot -e zsh -c "gdb-multiarch -x gdbscript.py" &
 	qemu-10.2.0/build/qemu-system-arm -machine stm32h750 -s -S \
 	-kernel $(BOOTLOADER_BIN) -serial stdio -display none \
 	-device loader,file=linux-6.18.7/arch/arm/boot/xipImage,addr=0x90000000 \
-	-device loader,file=linux-6.18.7/arch/arm/boot/dts/st/stm32h750vbt6.dtb,addr=0x90400000
+	-device loader,file=linux-6.18.7/arch/arm/boot/dts/st/stm32h750vbt6.dtb,addr=0x90400000 \
+	-device loader,file=rootfs.img,addr=0x90600000
+
 BOOTLOADER_BIN:
 	make -C bootloader
 
