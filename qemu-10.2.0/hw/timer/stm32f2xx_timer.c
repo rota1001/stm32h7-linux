@@ -43,6 +43,7 @@
 #define DB_PRINT(fmt, args...) DB_PRINT_L(1, fmt, ## args)
 
 static void stm32f2xx_timer_set_alarm(STM32F2XXTimerState *s, int64_t now);
+static inline int64_t stm32f2xx_ns_to_ticks(STM32F2XXTimerState *s, int64_t t);
 
 static void stm32f2xx_timer_interrupt(void *opaque)
 {
@@ -50,10 +51,21 @@ static void stm32f2xx_timer_interrupt(void *opaque)
 
     DB_PRINT("Interrupt\n");
 
-    if (s->tim_dier & TIM_DIER_UIE && s->tim_cr1 & TIM_CR1_CEN) {
-        s->tim_sr |= 1;
+    if ((s->tim_dier & TIM_DIER_CC1IE)
+        && (s->tim_cr1 & TIM_CR1_CEN)
+        && !s->ccr1_triggered) {
+        s->tim_sr |= TIM_SR_CC1IF;
         qemu_irq_pulse(s->irq);
-        stm32f2xx_timer_set_alarm(s, s->hit_time);
+        stm32f2xx_timer_set_alarm(s, qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL));
+        s->ccr1_triggered = 1;
+    }
+
+    if ((s->tim_dier & TIM_DIER_UIE) && (s->tim_cr1 & TIM_CR1_CEN)) {
+        s->tim_sr |= TIM_SR_UIF;
+        qemu_irq_pulse(s->irq);
+        s->tick_offset = stm32f2xx_ns_to_ticks(s, s->hit_time);
+        stm32f2xx_timer_set_alarm(s, qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL));
+        s->ccr1_triggered = 0;
     }
 
     if (s->tim_ccmr1 & (TIM_CCMR1_OC2M2 | TIM_CCMR1_OC2M1) &&
@@ -75,6 +87,7 @@ static void stm32f2xx_timer_set_alarm(STM32F2XXTimerState *s, int64_t now)
 {
     uint64_t ticks;
     int64_t now_ticks;
+    uint32_t target;
 
     if (s->tim_arr == 0) {
         return;
@@ -82,15 +95,22 @@ static void stm32f2xx_timer_set_alarm(STM32F2XXTimerState *s, int64_t now)
 
     DB_PRINT("Alarm set at: 0x%x\n", s->tim_cr1);
 
+    target = s->tim_arr;
+
     now_ticks = stm32f2xx_ns_to_ticks(s, now);
-    ticks = s->tim_arr - (now_ticks - s->tick_offset);
+    if ((now_ticks - s->tick_offset < s->tim_ccr1)
+        && (s->tim_ccr1 <= target))
+        target = s->tim_ccr1;
+
+
+    ticks = target - (now_ticks - s->tick_offset);
 
     DB_PRINT("Alarm set in %d ticks\n", (int) ticks);
 
     s->hit_time = muldiv64((ticks + (uint64_t) now_ticks) * (s->tim_psc + 1),
                                1000000000ULL, s->freq_hz);
 
-    timer_mod(s->timer, qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) + s->hit_time);
+    timer_mod(s->timer, s->hit_time);
     DB_PRINT("Wait Time: %" PRId64 " ticks\n", s->hit_time);
 }
 
@@ -117,6 +137,7 @@ static void stm32f2xx_timer_reset(DeviceState *dev)
     s->tim_dcr = 0;
     s->tim_dmar = 0;
     s->tim_or = 0;
+    s->ccr1_triggered = 0;
 
     s->tick_offset = stm32f2xx_ns_to_ticks(s, now);
 }
@@ -232,6 +253,8 @@ static void stm32f2xx_timer_write(void *opaque, hwaddr offset,
         return;
     case TIM_CCR1:
         s->tim_ccr1 = value;
+        s->ccr1_triggered = 0;
+        stm32f2xx_timer_set_alarm(s, now);
         return;
     case TIM_CCR2:
         s->tim_ccr2 = value;

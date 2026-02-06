@@ -2,6 +2,7 @@
 #define HW_ARM_STM32H750_SOC_H
 
 #include "hw/char/stm32l4x5_usart.h"
+#include "hw/timer/stm32f2xx_timer.h"
 #include "hw/or-irq.h"
 #include "hw/arm/armv7m.h"
 #include "qom/object.h"
@@ -27,6 +28,7 @@ struct STM32H750State {
     SysBusDevice parent_obj;
     ARMv7MState armv7m;
     Stm32l4x5UsartBaseState usart1;
+    STM32F2XXTimerState timer5;
     
     MemoryRegion flash;
     MemoryRegion dtcmram;
@@ -38,6 +40,7 @@ struct STM32H750State {
     MemoryRegion flash_alias;
 
     Clock *sysclk;
+    uint32_t rcc_regs[0x100];
 };
 
 #endif
