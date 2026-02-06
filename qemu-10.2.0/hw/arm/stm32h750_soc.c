@@ -73,8 +73,8 @@ static void stm32h750_soc_realize(DeviceState *dev_soc, Error **errp)
     memory_region_init_alias(&s->flash_alias, OBJECT(dev_soc), "flash_alias", &s->flash, 0, FLASH_SIZE);
     memory_region_add_subregion(system_memory, 0, &s->flash_alias);
 
-    memory_region_init_ram(&s->qspi_psram, OBJECT(dev_soc), "qspi_psram", QSPI_PSRAM_SIZE, &error_fatal);
-    memory_region_add_subregion(system_memory, QSPI_PSRAM_BASE, &s->qspi_psram);
+    memory_region_init_rom(&s->qspi_flash, OBJECT(dev_soc), "qspi_flash", QSPI_FLASH_SIZE, &error_fatal);
+    memory_region_add_subregion(system_memory, QSPI_FLASH_BASE, &s->qspi_flash);
 
     DeviceState *dev = DEVICE(&s->usart1);
     qdev_prop_set_chr(dev, "chardev", serial_hd(0));
