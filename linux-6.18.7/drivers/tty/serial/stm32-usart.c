@@ -1957,7 +1957,7 @@ static void stm32_usart_console_write(struct console *co, const char *s,
 static int stm32_usart_console_setup(struct console *co, char *options)
 {
 	struct stm32_port *stm32port;
-	int baud = 9600;
+	int baud = 115200;
 	int bits = 8;
 	int parity = 'n';
 	int flow = 'n';

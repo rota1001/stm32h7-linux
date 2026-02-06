@@ -186,7 +186,7 @@ struct stm32_usart_info {
 #define USART_HWCFGR1_CFG8	GENMASK(31, 28)	/* MP1 */
 
 #define STM32_SERIAL_NAME "ttySTM"
-#define STM32_MAX_PORTS 9
+#define STM32_MAX_PORTS 1
 #define STM32H7_USART_FIFO_SIZE 16
 
 #define RX_BUF_L 4096		 /* dma rx buffer length     */
