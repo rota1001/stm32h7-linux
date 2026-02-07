@@ -1,0 +1,19 @@
+[binaries]
+c = '/home/rota1001/side-project/stm32h7-linux/armv7m--uclibc--bleeding-edge-2025.08-1/bin/arm-linux-gcc'
+ar = '/home/rota1001/side-project/stm32h7-linux/armv7m--uclibc--bleeding-edge-2025.08-1/bin/arm-linux-ar'
+as = '/home/rota1001/side-project/stm32h7-linux/armv7m--uclibc--bleeding-edge-2025.08-1/bin/arm-linux-as'
+nm = '/home/rota1001/side-project/stm32h7-linux/armv7m--uclibc--bleeding-edge-2025.08-1/bin/arm-linux-nm'
+strip = '/home/rota1001/side-project/stm32h7-linux/armv7m--uclibc--bleeding-edge-2025.08-1/bin/arm-linux-strip'
+
+[host_machine]
+system = 'none'
+cpu_family = 'arm'
+cpu = 'cortex-m7'
+endian = 'little'
+
+[properties]
+skip_sanity_check = true
+
+[built-in options]
+c_args = ['-mcpu=cortex-m7', '-mthumb', '-static', '-nostdlib', '-fpic', '-mpic-register=r10', '-fomit-frame-pointer', '-ffunction-sections', '-fdata-sections']
+c_link_args = ['-mcpu=cortex-m7', '-mthumb', '-static', '-nostdlib']
