@@ -2,32 +2,25 @@
 set -e
 
 WORK_DIR="$(pwd)"
-BUILD_DIR="$WORK_DIR/build"
-INSTALL_DIR="$WORK_DIR/install"
-PICOLIBC_DIR="$WORK_DIR/picolibc"
+BUILDROOT_DIR="$WORK_DIR/buildroot-2025.02"
 
-if [ ! -d "picolibc" ]; then
-    echo "picolibc not found, cloning now..."
-    git clone https://github.com/picolibc/picolibc.git
-fi
+cp buildroot.config "$BUILDROOT_DIR"
+cp uclibc.mk "$BUILDROOT_DIR/package/uclibc"
+cd "$BUILDROOT_DIR"
+make uclibc-dirclean
+make uclibc -j`nproc`
 
-rm -rf "$BUILD_DIR"
-rm -rf "$INSTALL_DIR"
-mkdir "$BUILD_DIR"
+cp ../Makefile.commonarch output/build/uclibc-1.0.51/libc/sysdeps/linux/
+cp ../crt1.S output/build/uclibc-1.0.51/libc/sysdeps/linux/arm/
+cd output/build/uclibc-1.0.51
+rm -f lib/crt1.o
+make lib/crt1.o
+cp lib/crt1.o ../../host/arm-buildroot-uclinux-uclibcgnueabi/sysroot/usr/lib/crt1.o
 
-cd "$BUILD_DIR"
-meson setup \
-    --cross-file "$WORK_DIR/cross.txt" \
-    --prefix="$INSTALL_DIR" \
-    -Dmultilib=false \
-    -Dpicocrt=true \
-    -Dpicocrt-lib=true \
-    -Dsemihost=false \
-    -Dos-linux=true \
-    -Dposix-console=true \
-    -Dtests=false \
-    -Dthread-local-storage=false \
-    "$PICOLIBC_DIR"
 
-ninja
-ninja install
+cd "$WORK_DIR/toybox"
+make clean
+cp ../toybox.config .config
+CROSS_COMPILE=../buildroot-2025.02/output/host/bin/arm-linux- \
+CFLAGS="-Os -mthumb -mcpu=cortex-m7 -fpic -mpic-register=r10 -mno-pic-data-is-text-relative" \
+LDFLAGS="-Wl,--gc-sections" make

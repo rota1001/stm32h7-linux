@@ -1,0 +1,18 @@
+scripts/make.sh
+generated/{Config.in,newtoys.h,flags.h}
+Compile toybox
+...................lib/tty.c: In function 'scan_key_getsize':
+lib/tty.c:244:12: warning: implicit declaration of function 'xpoll'; did you mean 'poll'? [-Wimplicit-function-declaration]
+  244 |       if (!xpoll(&pfd, 1, maybe ? 30 : timeout_ms)) break;
+      |            ^~~~~
+      |            poll
+..lib/xwrap.c: In function 'xpopen_setup':
+lib/xwrap.c:258:33: warning: implicit declaration of function 'xfork'; did you mean 'vfork'? [-Wimplicit-function-declaration]
+  258 |   if (!(pid = CFG_TOYBOX_FORK ? xfork() : XVFORK())) {
+      |                                 ^~~~~
+      |                                 vfork
+...../home/rota1001/side-project/stm32h7-linux/armv7m--uclibc--bleeding-edge-2025.08-1/arm-buildroot-uclinux-uclibcgnueabi/bin/ld.real: warning: /home/rota1001/side-project/stm32h7-linux/armv7m--uclibc--bleeding-edge-2025.08-1/bin/../lib/gcc/arm-buildroot-uclinux-uclibcgnueabi/15.1.0/crtend.o: missing .note.GNU-stack section implies executable stack
+/home/rota1001/side-project/stm32h7-linux/armv7m--uclibc--bleeding-edge-2025.08-1/arm-buildroot-uclinux-uclibcgnueabi/bin/ld.real: NOTE: This behaviour is deprecated and will be removed in a future version of the linker
+.../../armv7m--uclibc--bleeding-edge-2025.08-1/bin/arm-linux-strip: generated/unstripped/toybox: file format not recognized
+strip failed, using unstripped
+.

@@ -91,6 +91,6 @@ def add_user_symbol():
 
 BreakPointCallback("rcc_init", skip_hook)
 BreakPointCallback("qspi_init", skip_hook)
+# gdb.events.stop.connect(stop_handler)
 BreakPointCallback("finalize_exec", break_at_return_hook, add_user_symbol)
-
 gdb.execute("c")

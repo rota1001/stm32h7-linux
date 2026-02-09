@@ -1,3 +1,13 @@
 bootloader/build/*
 .gdb_history
 build/*
+user/build/*
+user/install/*
+user/picolibc/*
+.vscode/*
+dummy.bin
+rootfs/*
+init
+init.gdb
+rootfs.img
+armv7m*
