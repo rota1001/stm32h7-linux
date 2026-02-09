@@ -232,6 +232,9 @@ static void stm32l4x5_usart_base_receive(void *opaque, const uint8_t *buf,
         trace_stm32l4x5_usart_rx(s->rdr);
     }
 
+    if (s->cr2 & R_CR2_RTOEN_MASK)
+        s->isr |= R_ISR_RTOF_MASK;
+
     stm32l4x5_update_irq(s);
 }
 
@@ -444,6 +447,7 @@ static uint64_t stm32l4x5_usart_base_read(void *opaque, hwaddr addr,
         /* Reset RXNE flag */
         s->isr &= ~R_ISR_RXNE_MASK;
         stm32l4x5_update_irq(s);
+        qemu_chr_fe_accept_input(&s->chr);
         break;
     case A_TDR:
         retvalue = FIELD_EX32(s->tdr, TDR, TDR);
