@@ -2,7 +2,7 @@ import gdb
 import re
 import subprocess
 
-vmlinux = "linux-6.18.7/vmlinux"
+vmlinux = "linux-6.19/vmlinux"
 bootloader = "bootloader/build/bootloader.out"
 GDB_SERVER = "localhost:1234"
 

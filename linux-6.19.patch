@@ -1,0 +1,489 @@
+diff --color -urN linux-6.19/arch/arm/boot/dts/st/Makefile ../linux-6.19/arch/arm/boot/dts/st/Makefile
+--- linux-6.19/arch/arm/boot/dts/st/Makefile	2026-02-09 05:03:27.000000000 +0800
++++ ../linux-6.19/arch/arm/boot/dts/st/Makefile	2026-02-10 00:25:50.925720871 +0800
+@@ -71,7 +71,8 @@
+ 	stm32mp157c-osd32mp1-red.dtb \
+ 	stm32mp157c-phycore-stm32mp1-3.dtb \
+ 	stm32mp157c-ultra-fly-sbc.dtb \
+-	stm32mp157f-dk2.dtb
++	stm32mp157f-dk2.dtb \
++	stm32h750vbt6.dtb
+ dtb-$(CONFIG_ARCH_U8500) += \
+ 	ste-snowball.dtb \
+ 	ste-hrefprev60-stuib.dtb \
+diff --color -urN linux-6.19/arch/arm/boot/dts/st/stm32h750vbt6.dts ../linux-6.19/arch/arm/boot/dts/st/stm32h750vbt6.dts
+--- linux-6.19/arch/arm/boot/dts/st/stm32h750vbt6.dts	1970-01-01 08:00:00.000000000 +0800
++++ ../linux-6.19/arch/arm/boot/dts/st/stm32h750vbt6.dts	2026-02-10 02:06:48.899997728 +0800
+@@ -0,0 +1,47 @@
++/dts-v1/;
++#include "stm32h750.dtsi"
++#include "stm32h7-pinctrl.dtsi"
++#include <dt-bindings/interrupt-controller/irq.h>
++#include <dt-bindings/gpio/gpio.h>
++
++/ {
++    model = "STM32H750 board";
++    compatible = "st,stm32h750vbt6", "st,stm32h750";
++    chosen {
++        bootargs = "console=ttySTM0,115200 earlyprintk cma=64K phram.phram=romfs,0x90600000,0x80000 root=mtd:romfs rootfstype=romfs init=/bin/sh";
++        stdout-path = "serial0:115200n8";
++    };
++
++    memory@20000000 {
++        device_type = "memory";
++        reg = <
++        0x20000000 0x20000 
++        0x24000000 0x80000
++        0x30000000 0x48000
++        0x38000000 0x10000
++        >;
++    };
++
++    // flash@90000000 {
++    //     compatible = "physmap-flash";
++    //     reg = <0x90000000 0x800000>;
++    //     linux,mtd-name = "qspi-rom";
++    // };
++
++    aliases {
++        serial0 = &usart1;
++    };
++};
++
++&clk_hse {
++    clock-frequency = <25000000>;
++};
++
++&usart1 {
++    pinctrl-0 = <&usart1_pins_b>;
++	pinctrl-names = "default";
++	status = "okay";
++};
++
++&sdmmc1 { status = "disabled"; };
++&i2c1 { status = "disabled"; };
+Binary files linux-6.19/arch/arm/boot/xipImage and ../linux-6.19/arch/arm/boot/xipImage differ
+diff --color -urN linux-6.19/arch/arm/include/asm/sparsemem.h ../linux-6.19/arch/arm/include/asm/sparsemem.h
+--- linux-6.19/arch/arm/include/asm/sparsemem.h	2026-02-09 05:03:27.000000000 +0800
++++ ../linux-6.19/arch/arm/include/asm/sparsemem.h	2026-02-10 01:37:55.553609097 +0800
+@@ -19,8 +19,8 @@
+  * These can be overridden in your mach/memory.h.
+  */
+ #if !defined(MAX_PHYSMEM_BITS) || !defined(SECTION_SIZE_BITS)
+-#define MAX_PHYSMEM_BITS	36
+-#define SECTION_SIZE_BITS	28
++#define MAX_PHYSMEM_BITS	30
++#define SECTION_SIZE_BITS	21
+ #endif
+ 
+ #endif
+diff --color -urN linux-6.19/arch/arm/include/debug/stm32.S ../linux-6.19/arch/arm/include/debug/stm32.S
+--- linux-6.19/arch/arm/include/debug/stm32.S	2026-02-09 05:03:27.000000000 +0800
++++ ../linux-6.19/arch/arm/include/debug/stm32.S	2026-02-10 02:06:16.949774798 +0800
+@@ -24,7 +24,7 @@
+ .endm
+ 
+ .macro  senduart,rd,rx
+-	strb    \rd, [\rx, #STM32_USART_TDR_OFF]
++	str    \rd, [\rx, #STM32_USART_TDR_OFF]
+ .endm
+ 
+ .macro	waituartcts,rd,rx
+diff --color -urN linux-6.19/arch/arm/Kconfig ../linux-6.19/arch/arm/Kconfig
+--- linux-6.19/arch/arm/Kconfig	2026-02-09 05:03:27.000000000 +0800
++++ ../linux-6.19/arch/arm/Kconfig	2026-02-10 00:11:44.724962791 +0800
+@@ -1190,7 +1190,6 @@
+ 
+ config ARCH_SPARSEMEM_ENABLE
+ 	def_bool !ARCH_FOOTBRIDGE
+-	select SPARSEMEM_STATIC if SPARSEMEM
+ 
+ config HIGHMEM
+ 	bool "High Memory Support"
+diff --color -urN linux-6.19/arch/arm/kernel/vmlinux.lds ../linux-6.19/arch/arm/kernel/vmlinux.lds
+--- linux-6.19/arch/arm/kernel/vmlinux.lds	1970-01-01 08:00:00.000000000 +0800
++++ ../linux-6.19/arch/arm/kernel/vmlinux.lds	2026-02-10 02:58:28.822575776 +0800
+@@ -0,0 +1,84 @@
++OUTPUT_ARCH(arm)
++ENTRY(stext)
++jiffies = jiffies_64;
++SECTIONS
++{
++ /DISCARD/ : {
++  *(.ARM.exidx.exit.text) *(.ARM.extab.exit.text) *(.ARM.exidx.text.exit) *(.ARM.extab.text.exit) *(.ARM.exidx.cpuexit.text) *(.ARM.extab.cpuexit.text) *(.exit.text) *(.text.exit .text.exit.*) *(.exit.data .exit.data.*) *(.fini_array .fini_array.*) *(.dtors .dtors.*) *(.exitcall.exit) *(.text.fixup) *(__ex_table) *(.discard) *(.discard.*) *(.export_symbol) *(.no_trim_symbol) *(.gnu.version*) *(__tracepoint_check)
++  *(.alt.smp.init)
++  *(.pv_table)
++ }
++ . = (0x90000000);
++ _xiprom = .;
++ .head.text : {
++  _text = .;
++  KEEP(*(.head.text))
++ }
++ .text : {
++  _stext = .;
++  . = ALIGN(0); __idmap_text_start = .; *(.idmap.text) __idmap_text_end = .; __entry_text_start = .; *(.entry.text) __entry_text_end = .; . = ALIGN(0); __irqentry_text_start = .; *(.irqentry.text) __irqentry_text_end = .; . = ALIGN(0); __softirqentry_text_start = .; *(.softirqentry.text) __softirqentry_text_end = .; . = ALIGN(0); *(.text.asan.* .text.tsan.*) *(.text.unknown .text.unknown.*) __split_text_start = .; *(.text.split .text.split.[0-9a-zA-Z_]*) __split_text_end = .; __unlikely_text_start = .; *(.text.unlikely .text.unlikely.*) __unlikely_text_end = .; . = ALIGN((1 << 12)); __hot_text_start = .; *(.text.hot .text.hot.*) __hot_text_end = .; *(.text .text.[_0-9A-Za-df-rt-z]* .text.s[_0-9A-Za-su-z]* .text.s .text.s.* .text.st[_0-9A-Zb-z]* .text.st .text.st.* .text.sta[_0-9A-Za-qs-z]* .text.sta .text.sta.* .text.star[_0-9A-Za-su-z]* .text.star .text.star.* .text.start[_0-9A-Za-tv-z]* .text.start .text.start.* .text.startu[_0-9A-Za-oq-z]* .text.startu .text.startu.* .text.startup[_0-9A-Za-z]* .text.e[_0-9A-Za-wy-z]* .text.e .text.e.* .text.ex[_0-9A-Za-hj-z]* .text.ex .text.ex.* .text.exi[_0-9A-Za-su-z]* .text.exi .text.exi.* .text.exit[_0-9A-Za-z]* .text.fixup) . = ALIGN(0); __noinstr_text_start = .; *(.noinstr.text) __cpuidle_text_start = .; *(.cpuidle.text) __cpuidle_text_end = .; __noinstr_text_end = .; *(.ref.text) . = ALIGN(0); __sched_text_start = .; *(.sched.text) __sched_text_end = .; . = ALIGN(0); __lock_text_start = .; *(.spinlock.text) __lock_text_end = .; . = ALIGN(0); __kprobes_text_start = .; *(.kprobes.text) __kprobes_text_end = .; *(.gnu.warning) *(.glue_7) *(.glue_7t) *(.vfp11_veneer) *(.v4_bx) . = ALIGN(4); *(.got)
++ }
++ . = ALIGN(((1 << 12))); .rodata : AT(ADDR(.rodata) - 0) { __start_rodata = .; *(.rodata) *(.rodata.*) *(.data.rel.ro*) . = ALIGN(32); __sched_class_highest = .; *(__stop_sched_class) *(__dl_sched_class) *(__rt_sched_class) *(__fair_sched_class) *(__ext_sched_class) *(__idle_sched_class) __sched_class_lowest = .; . = ALIGN(8); __start___tracepoints_ptrs = .; KEEP(*(__tracepoints_ptrs)) __stop___tracepoints_ptrs = .; *(__tracepoints_strings) } .rodata1 : AT(ADDR(.rodata1) - 0) { *(.rodata1) } .pci_fixup : AT(ADDR(.pci_fixup) - 0) { __start_pci_fixups_early = .; KEEP(*(.pci_fixup_early)) __end_pci_fixups_early = .; __start_pci_fixups_header = .; KEEP(*(.pci_fixup_header)) __end_pci_fixups_header = .; __start_pci_fixups_final = .; KEEP(*(.pci_fixup_final)) __end_pci_fixups_final = .; __start_pci_fixups_enable = .; KEEP(*(.pci_fixup_enable)) __end_pci_fixups_enable = .; __start_pci_fixups_resume = .; KEEP(*(.pci_fixup_resume)) __end_pci_fixups_resume = .; __start_pci_fixups_suspend = .; KEEP(*(.pci_fixup_suspend)) __end_pci_fixups_suspend = .; __start_pci_fixups_resume_early = .; KEEP(*(.pci_fixup_resume_early)) __end_pci_fixups_resume_early = .; __start_pci_fixups_suspend_late = .; KEEP(*(.pci_fixup_suspend_late)) __end_pci_fixups_suspend_late = .; } __ksymtab : AT(ADDR(__ksymtab) - 0) { __start___ksymtab = .; KEEP(*(SORT(___ksymtab+*))) __stop___ksymtab = .; } __ksymtab_gpl : AT(ADDR(__ksymtab_gpl) - 0) { __start___ksymtab_gpl = .; KEEP(*(SORT(___ksymtab_gpl+*))) __stop___ksymtab_gpl = .; } __kcrctab : AT(ADDR(__kcrctab) - 0) { __start___kcrctab = .; KEEP(*(SORT(___kcrctab+*))) __stop___kcrctab = .; } __kcrctab_gpl : AT(ADDR(__kcrctab_gpl) - 0) { __start___kcrctab_gpl = .; KEEP(*(SORT(___kcrctab_gpl+*))) __stop___kcrctab_gpl = .; } __ksymtab_strings : AT(ADDR(__ksymtab_strings) - 0) { *(__ksymtab_strings) } __init_rodata : AT(ADDR(__init_rodata) - 0) { *(.ref.rodata) } __param : AT(ADDR(__param) - 0) { __start___param = .; KEEP(*(__param)) __stop___param = .; } __modver : AT(ADDR(__modver) - 0) { __start___modver = .; KEEP(*(__modver)) __stop___modver = .; } /DISCARD/ : { *(.note.GNU-stack) *(.note.gnu.property) } .notes : AT(ADDR(.notes) - 0) { __start_notes = .; KEEP(*(.note.*)) __stop_notes = .; } . = ALIGN(((1 << 12))); __end_rodata = .;
++ . = ALIGN(4);
++ __ex_table : AT(ADDR(__ex_table) - 0) {
++  __start___ex_table = .;
++ 
++  __stop___ex_table = .;
++ }
++ . = ALIGN(8); .ARM.unwind_idx : { __start_unwind_idx = .; *(.ARM.exidx*) __stop_unwind_idx = .; } .ARM.unwind_tab : { __start_unwind_tab = .; *(.ARM.extab*) __stop_unwind_tab = .; }
++ _etext = .;
++ __vectors_lma = .; OVERLAY 0xffff0000 : NOCROSSREFS AT(__vectors_lma) { .vectors { KEEP(*(.vectors)) } .vectors.bhb.loop8 { KEEP(*(.vectors.bhb.loop8)) } .vectors.bhb.bpiall { KEEP(*(.vectors.bhb.bpiall)) } } __vectors_start = LOADADDR(.vectors); __vectors_end = LOADADDR(.vectors) + SIZEOF(.vectors); __vectors_bhb_loop8_start = LOADADDR(.vectors.bhb.loop8); __vectors_bhb_loop8_end = LOADADDR(.vectors.bhb.loop8) + SIZEOF(.vectors.bhb.loop8); __vectors_bhb_bpiall_start = LOADADDR(.vectors.bhb.bpiall); __vectors_bhb_bpiall_end = LOADADDR(.vectors.bhb.bpiall) + SIZEOF(.vectors.bhb.bpiall); . = __vectors_lma + SIZEOF(.vectors) + SIZEOF(.vectors.bhb.loop8) + SIZEOF(.vectors.bhb.bpiall); __stubs_lma = .; .stubs ADDR(.vectors) + 0x1000 : AT(__stubs_lma) { *(.stubs) } __stubs_start = LOADADDR(.stubs); __stubs_end = LOADADDR(.stubs) + SIZEOF(.stubs); . = __stubs_lma + SIZEOF(.stubs); PROVIDE(vector_fiq_offset = vector_fiq - ADDR(.vectors));
++ . = ALIGN(8); .init.text : AT(ADDR(.init.text) - 0) { _sinittext = .; *(.init.text .init.text.*) *(.text.startup .text.startup.*) _einittext = .; }
++ .exit.text : {
++ 
++ }
++ .init.proc.info : {
++  . = ALIGN(4); __proc_info_begin = .; KEEP(*(.proc.info.init)) __proc_info_end = .;
++ }
++ .init.arch.info : {
++  __arch_info_begin = .;
++  KEEP(*(.arch.info.init))
++  __arch_info_end = .;
++ }
++ .init.tagtable : {
++  __tagtable_begin = .;
++  *(.taglist.init)
++  __tagtable_end = .;
++ }
++ .init.rodata : {
++  . = ALIGN(16); __setup_start = .; KEEP(*(.init.setup)) __setup_end = .;
++  __initcall_start = .; KEEP(*(.initcallearly.init)) __initcall0_start = .; KEEP(*(.initcall0.init)) KEEP(*(.initcall0s.init)) __initcall1_start = .; KEEP(*(.initcall1.init)) KEEP(*(.initcall1s.init)) __initcall2_start = .; KEEP(*(.initcall2.init)) KEEP(*(.initcall2s.init)) __initcall3_start = .; KEEP(*(.initcall3.init)) KEEP(*(.initcall3s.init)) __initcall4_start = .; KEEP(*(.initcall4.init)) KEEP(*(.initcall4s.init)) __initcall5_start = .; KEEP(*(.initcall5.init)) KEEP(*(.initcall5s.init)) __initcallrootfs_start = .; KEEP(*(.initcallrootfs.init)) KEEP(*(.initcallrootfss.init)) __initcall6_start = .; KEEP(*(.initcall6.init)) KEEP(*(.initcall6s.init)) __initcall7_start = .; KEEP(*(.initcall7.init)) KEEP(*(.initcall7s.init)) __initcall_end = .;
++  __con_initcall_start = .; KEEP(*(.con_initcall.init)) __con_initcall_end = .;
++ 
++ }
++ _exiprom = .;
++ __data_loc = ALIGN(4);
++ . = ((0x20000000)) + 0x0;
++ . = ALIGN(((1 << 12) << 1));
++ _sdata = .;
++ . = ALIGN((1 << 12)); .data : AT(ADDR(.data) - (((0x20000000)) + 0x0 - __data_loc)) { . = ALIGN(((1 << 12) << 1)); __start_init_stack = .; init_thread_union = .; init_stack = .; KEEP(*(.data..init_thread_info)) . = __start_init_stack + ((1 << 12) << 1); __end_init_stack = .; . = ALIGN((1 << 12)); __nosave_begin = .; *(.data..nosave) . = ALIGN((1 << 12)); __nosave_end = .; . = ALIGN((1 << 12)); *(.data..page_aligned) . = ALIGN((1 << 12)); . = ALIGN((1 << 5)); *(SORT_BY_ALIGNMENT(.data..hot.*)) . = ALIGN((1 << 5)); . = ALIGN((1 << 5)); *(.data..cacheline_aligned) . = ALIGN((1 << 5)); *(.data..read_mostly) . = ALIGN((1 << 5)); *(.xiptext) *(.data .data.[0-9a-zA-Z_]* .data.rel.* .data..L* .data..compoundliteral* .data.$__unnamed_* .data.$L*) *(.data..decrypted) *(.ref.data) *(.data..shared_aligned) *(.data..unlikely) __start_once = .; *(.data..once) __end_once = .; *(.data..do_once) . = ALIGN(32); *(__tracepoints) . = ALIGN(8); __start___dyndbg_classes = .; KEEP(*(__dyndbg_classes)) __stop___dyndbg_classes = .; __start___dyndbg = .; KEEP(*(__dyndbg)) __stop___dyndbg = .; . = ALIGN(8); __kunit_suites_start = .; KEEP(*(.kunit_test_suites)) __kunit_suites_end = .; CONSTRUCTORS }
++ .data.ro_after_init : AT(ADDR(.data.ro_after_init) - (((0x20000000)) + 0x0 - __data_loc)) {
++  *(.data..ro_after_init)
++ }
++ _edata = .;
++ . = ALIGN((1 << 12));
++ __init_begin = .;
++ .init.data : AT(ADDR(.init.data) - (((0x20000000)) + 0x0 - __data_loc)) {
++  KEEP(*(SORT(___kentry+*))) *(.init.data .init.data.*) *(.init.rodata .init.rodata.*) . = ALIGN(8); __clk_of_table = .; KEEP(*(__clk_of_table)) KEEP(*(__clk_of_table_end)) . = ALIGN(8); __reservedmem_of_table = .; KEEP(*(__reservedmem_of_table)) KEEP(*(__reservedmem_of_table_end)) . = ALIGN(8); __timer_of_table = .; KEEP(*(__timer_of_table)) KEEP(*(__timer_of_table_end)) . = ALIGN(32); __dtb_start = .; KEEP(*(.dtb.init.rodata)) __dtb_end = .; . = ALIGN(8); __irqchip_of_table = .; KEEP(*(__irqchip_of_table)) KEEP(*(__irqchip_of_table_end)) . = ALIGN(8); __earlycon_table = .; KEEP(*(__earlycon_table)) __earlycon_table_end = .; . = ALIGN(8); __kunit_init_suites_start = .; KEEP(*(.kunit_init_test_suites)) __kunit_init_suites_end = .;
++ }
++ .exit.data : AT(ADDR(.exit.data) - (((0x20000000)) + 0x0 - __data_loc)) {
++ 
++ }
++ .data.endmark : AT(ADDR(.data.endmark) - (((0x20000000)) + 0x0 - __data_loc)) { }
++ _edata_loc = LOADADDR(.data.endmark);
++ . = ALIGN((1 << 12));
++ __init_end = .;
++ . = ALIGN(0); __bss_start = .; . = ALIGN(0); .sbss : AT(ADDR(.sbss) - (((0x20000000)) + 0x0 - __data_loc)) { *(.dynsbss) *(.sbss .sbss.[0-9a-zA-Z_]*) *(.scommon) } . = ALIGN(0); .bss : AT(ADDR(.bss) - (((0x20000000)) + 0x0 - __data_loc)) { . = ALIGN((1 << 12)); *(.bss..page_aligned) . = ALIGN((1 << 12)); *(.dynbss) *(.bss .bss.[0-9a-zA-Z_]* .bss..L* .bss..compoundliteral*) *(COMMON) } . = ALIGN(8); __bss_stop = .;
++ _end = .;
++ .stab 0 : { *(.stab) } .stabstr 0 : { *(.stabstr) } .stab.excl 0 : { *(.stab.excl) } .stab.exclstr 0 : { *(.stab.exclstr) } .stab.index 0 : { *(.stab.index) } .stab.indexstr 0 : { *(.stab.indexstr) }
++ .debug 0 : { *(.debug) } .line 0 : { *(.line) } .debug_srcinfo 0 : { *(.debug_srcinfo) } .debug_sfnames 0 : { *(.debug_sfnames) } .debug_aranges 0 : { *(.debug_aranges) } .debug_pubnames 0 : { *(.debug_pubnames) } .debug_info 0 : { *(.debug_info .gnu.linkonce.wi.*) } .debug_abbrev 0 : { *(.debug_abbrev) } .debug_line 0 : { *(.debug_line) } .debug_frame 0 : { *(.debug_frame) } .debug_str 0 : { *(.debug_str) } .debug_loc 0 : { *(.debug_loc) } .debug_macinfo 0 : { *(.debug_macinfo) } .debug_pubtypes 0 : { *(.debug_pubtypes) } .debug_ranges 0 : { *(.debug_ranges) } .debug_weaknames 0 : { *(.debug_weaknames) } .debug_funcnames 0 : { *(.debug_funcnames) } .debug_typenames 0 : { *(.debug_typenames) } .debug_varnames 0 : { *(.debug_varnames) } .debug_gnu_pubnames 0 : { *(.debug_gnu_pubnames) } .debug_gnu_pubtypes 0 : { *(.debug_gnu_pubtypes) } .debug_types 0 : { *(.debug_types) } .debug_addr 0 : { *(.debug_addr) } .debug_line_str 0 : { *(.debug_line_str) } .debug_loclists 0 : { *(.debug_loclists) } .debug_macro 0 : { *(.debug_macro) } .debug_names 0 : { *(.debug_names) } .debug_rnglists 0 : { *(.debug_rnglists) } .debug_str_offsets 0 : { *(.debug_str_offsets) }
++ .modinfo : { *(.modinfo) . = ALIGN(8); } .comment 0 : { *(.comment) } .symtab 0 : { *(.symtab) } .strtab 0 : { *(.strtab) } .shstrtab 0 : { *(.shstrtab) } .ARM.attributes 0 : { *(.ARM.attributes) }
++ .plt : { *(.iplt) *(.rel.iplt) *(.iplt) *(.igot.plt) } ASSERT(SIZEOF(.plt) == 0, "Unexpected run-time procedure linkages detected!")
++}
++ASSERT((__proc_info_end - __proc_info_begin), "missing CPU support")
++ASSERT((__arch_info_end - __arch_info_begin), "no machine record defined")
+diff --color -urN linux-6.19/arch/arm/mach-stm32/board-dt.c ../linux-6.19/arch/arm/mach-stm32/board-dt.c
+--- linux-6.19/arch/arm/mach-stm32/board-dt.c	2026-02-09 05:03:27.000000000 +0800
++++ ../linux-6.19/arch/arm/mach-stm32/board-dt.c	2026-02-10 02:29:01.076994069 +0800
+@@ -6,11 +6,45 @@
+  */
+ 
+ #include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/memblock.h>
++#include <linux/mm.h>
++#include <linux/gfp.h>
+ #include <asm/mach/arch.h>
+ #ifdef CONFIG_ARM_SINGLE_ARMV7M
+ #include <asm/v7m.h>
+ #endif
+ 
++#define BODYGUARD_PHYS_START  0x30000000
++#define BODYGUARD_SIZE        (64 * 1024)
++
++static void __init stm32_reserve(void)
++{
++    memblock_reserve(BODYGUARD_PHYS_START, BODYGUARD_SIZE);
++}
++
++static int __init release_bodyguard_memory(void)
++{
++    unsigned long start_pfn = PHYS_PFN(BODYGUARD_PHYS_START);
++    unsigned long end_pfn   = PHYS_PFN(BODYGUARD_PHYS_START + BODYGUARD_SIZE);
++    unsigned long pfn;
++    pr_info("[BODYGUARD] Release: 0x%08x - 0x%08x\n", BODYGUARD_PHYS_START, BODYGUARD_PHYS_START + BODYGUARD_SIZE);
++    memblock_free(BODYGUARD_PHYS_START, BODYGUARD_SIZE);
++
++    for (pfn = start_pfn; pfn < end_pfn; pfn++) {
++        struct page *page = pfn_to_page(pfn);
++        
++        if (PageReserved(page)) {
++            ClearPageReserved(page);
++            init_page_count(page);
++            __free_page(page);
++        }
++    }
++
++    return 0;
++}
++late_initcall(release_bodyguard_memory);
++
+ static const char *const stm32_compat[] __initconst = {
+ 	"st,stm32f429",
+ 	"st,stm32f469",
+@@ -32,4 +66,5 @@
+ #ifdef CONFIG_ARM_SINGLE_ARMV7M
+ 	.restart = armv7m_restart,
+ #endif
++    .reserve = stm32_reserve,
+ MACHINE_END
+diff --color -urN linux-6.19/arch/arm/Makefile ../linux-6.19/arch/arm/Makefile
+--- linux-6.19/arch/arm/Makefile	2026-02-09 05:03:27.000000000 +0800
++++ ../linux-6.19/arch/arm/Makefile	2026-02-10 00:34:49.641625350 +0800
+@@ -159,7 +159,7 @@
+ # Note: the 32kB below this value is reserved for use by the kernel
+ # during boot, and this offset is critical to the functioning of
+ # kexec-tools.
+-textofs-y	:= 0x00008000
++textofs-y	:= 0x0
+ # RTD1195 has Boot ROM at start of address space
+ textofs-$(CONFIG_ARCH_REALTEK)  := 0x00108000
+ # SA1111 DMA bug: we don't want the kernel to live in precious DMA-able memory
+diff --color -urN linux-6.19/build.sh ../linux-6.19/build.sh
+--- linux-6.19/build.sh	1970-01-01 08:00:00.000000000 +0800
++++ ../linux-6.19/build.sh	2026-02-10 00:18:56.439627778 +0800
+@@ -0,0 +1,8 @@
++#!/bin/sh
++
++make clean
++make ARCH=arm tinyconfig
++./scripts/kconfig/merge_config.sh -m .config ./custom_config
++make ARCH=arm olddefconfig
++make ARCH=arm CROSS_COMPILE=arm-linux-gnueabi- -j$(nproc)
++# make ARCH=arm INSTALL_HDR_PATH=`pwd`/../linux-headers headers_install
+diff --color -urN linux-6.19/custom_config ../linux-6.19/custom_config
+--- linux-6.19/custom_config	1970-01-01 08:00:00.000000000 +0800
++++ ../linux-6.19/custom_config	2026-02-10 02:36:15.389437028 +0800
+@@ -0,0 +1,173 @@
++CONFIG_NO_HZ_IDLE=y
++# CONFIG_HIGH_RES_TIMERS is not set
++CONFIG_PREEMPT=y
++CONFIG_LOG_BUF_SHIFT=12
++# CONFIG_BLK_DEV_INITRD is not set
++CONFIG_CC_OPTIMIZE_FOR_SIZE=y
++CONFIG_EXPERT=y
++# CONFIG_UID16 is not set
++# CONFIG_POSIX_TIMERS is not set
++CONFIG_BASE_SMALL=y
++# CONFIG_FUTEX is not set
++# CONFIG_EPOLL is not set
++# CONFIG_SIGNALFD is not set
++# CONFIG_EVENTFD is not set
++# CONFIG_AIO is not set
++# CONFIG_IO_URING is not set
++# CONFIG_ADVISE_SYSCALLS is not set
++# CONFIG_MMU is not set
++CONFIG_ARCH_STM32=y
++CONFIG_CPU_V7M_NUM_IRQ=240
++CONFIG_SET_MEM_PARAM=y
++CONFIG_DRAM_BASE=0x20000000
++CONFIG_DRAM_SIZE=0x20000
++# CONFIG_ATAGS is not set
++CONFIG_XIP_KERNEL=y
++CONFIG_XIP_PHYS_ADDR=0x90000000
++# CONFIG_SUSPEND is not set
++# CONFIG_GCC_PLUGINS is not set
++CONFIG_BINFMT_FLAT=y
++CONFIG_BINFMT_FLAT_ARGVP_ENVP_ON_STACK=y
++CONFIG_BINFMT_FLAT_OLD=n
++# CONFIG_COREDUMP is not set
++# CONFIG_VM_EVENT_COUNTERS is not set
++# CONFIG_DEVTMPFS is not set
++# CONFIG_DEVTMPFS_MOUNT is not set
++# CONFIG_FW_LOADER is not set
++# CONFIG_BLK_DEV is not set
++CONFIG_EEPROM_93CX6=y
++CONFIG_KEYBOARD_GPIO=y
++# CONFIG_VT is not set
++# CONFIG_UNIX98_PTYS is not set
++# CONFIG_LEGACY_PTYS is not set
++CONFIG_SERIAL_STM32=y
++CONFIG_SERIAL_STM32_CONSOLE=y
++CONFIG_SERIAL_NONSTANDARD=y
++# CONFIG_HW_RANDOM is not set
++# CONFIG_I2C is not set
++# CONFIG_I2C_CHARDEV is not set
++CONFIG_GPIO_STMPE=y
++# CONFIG_HWMON is not set
++CONFIG_WATCHDOG=y
++CONFIG_MFD_STMPE=y
++CONFIG_REGULATOR=y
++CONFIG_REGULATOR_FIXED_VOLTAGE=y
++# CONFIG_USB_SUPPORT is not set
++CONFIG_MMC=y
++CONFIG_MMC_ARMMMCI=y
++CONFIG_NEW_LEDS=y
++CONFIG_LEDS_CLASS=y
++CONFIG_LEDS_GPIO=y
++CONFIG_LEDS_TRIGGERS=y
++CONFIG_LEDS_TRIGGER_HEARTBEAT=y
++CONFIG_RTC_CLASS=y
++CONFIG_RTC_DRV_STM32=y
++CONFIG_DMADEVICES=y
++# CONFIG_STM32_DMA is not set
++# CONFIG_STM32_DMAMUX is not set
++# CONFIG_STM32_MDMA is not set
++# CONFIG_COMMON_CLK_STM32MP is not set
++CONFIG_IIO=y
++CONFIG_STM32_ADC_CORE=y
++CONFIG_STM32_ADC=y
++CONFIG_EXT4_FS=y
++# CONFIG_FILE_LOCKING is not set
++# CONFIG_DNOTIFY is not set
++# CONFIG_INOTIFY_USER is not set
++CONFIG_NLS=y
++CONFIG_PRINTK_TIME=y
++# CONFIG_DEBUG_BUGVERBOSE is not set
++CONFIG_DEBUG_INFO_DWARF_TOOLCHAIN_DEFAULT=y
++CONFIG_DEBUG_INFO=y
++CONFIG_DEBUG_INFO_REDUCED=n
++CONFIG_MAGIC_SYSRQ=y
++# CONFIG_SLUB_DEBUG is not set
++# CONFIG_ARCH_FLATMEM_ENABLE=n
++
++CONFIG_SPARSEMEM_MANUAL=y
++CONFIG_SPARSEMEM=y
++# CONFIG_SPARSEMEM_STATIC is not set
++CONFIG_SPARSEMEM_EXTREME=y
++CONFIG_ARCH_SPARSEMEM_ENABLE=y
++# CONFIG_FLATMEM is not set
++CONFIG_EXPERT=y
++CONFIG_ARCH_FORCE_MAX_ORDER=8
++
++
++CONFIG_TTY=y
++CONFIG_SERIAL_STM32=y
++CONFIG_SERIAL_STM32_CONSOLE=y
++
++CONFIG_DEBUG_LL=y
++CONFIG_STM32H7_DEBUG_UART=y
++CONFIG_DEBUG_STM32_UART=y
++CONFIG_DEBUG_UART_PHYS=0x40011000
++CONFIG_EARLY_PRINTK=y
++CONFIG_PRINTK=y
++
++CONFIG_SLUB_TINY=y
++
++# CONFIG_MACH_STM32F429 is not set
++# CONFIG_MACH_STM32F469 is not set
++# CONFIG_MACH_STM32F746 is not set
++# CONFIG_MACH_STM32F769 is not set
++
++# CONFIG_PINCTRL_STM32F429 is not set
++# CONFIG_PINCTRL_STM32F469 is not set
++# CONFIG_PINCTRL_STM32F746 is not set
++# CONFIG_PINCTRL_STM32F769 is not set
++
++# CONFIG_SMP is not set
++# CONFIG_PREEMPT_RCU is not set
++
++# CONFIG_BLOCK=y
++# CONFIG_MISC_FILESYSTEMS=y
++# CONFIG_ROMFS_FS=y
++# CONFIG_MTD_CMDLINE_PARTS=y
++# CONFIG_MTD=y
++# CONFIG_MTD_BLOCK=y
++# CONFIG_MTD_ROM=y
++# CONFIG_MTD_PHYSMAP=y
++
++# CONFIG_INITRAMFS_SOURCE="/home/rota1001/side-project/stm32h7-linux/initramfs.cpio"
++# CONFIG_INITRAMFS_COMPRESSION_NONE=y
++CONFIG_BINFMT_ELF=y
++CONFIG_BINFMT_ELF_FDPIC=y
++
++# CONFIG_BLOCK is not set
++CONFIG_MTD=y
++# CONFIG_MTD_BLOCK is not set
++# CONFIG_MTD_BLKDEVS is not set
++CONFIG_MTD_PHRAM=y
++
++CONFIG_MISC_FILESYSTEMS=y
++CONFIG_ROMFS_FS=y
++CONFIG_ROMFS_BACKED_BY_MTD=y
++CONFIG_ROMFS_ON_MTD=y
++
++CONFIG_PREEMPT_NONE=y
++# CONFIG_RCU_EXPERT=y
++CONFIG_TINY_RCU=y
++CONFIG_PM=y
++CONFIG_WQ_POWER_EFFICIENT_DEFAULT=y
++
++CONFIG_EXT4_FS=n
++CONFIG_NLS=n
++
++CONFIG_MMC=n
++CONFIG_WATCHDOG=n
++CONFIG_MFD_STMPE=n
++CONFIG_GPIO_STMPE=n
++CONFIG_REGULATOR=n
++CONFIG_NEW_LEDS=n
++CONFIG_RTC_CLASS=n
++CONFIG_DMADEVICES=n
++CONFIG_IIO=n
++CONFIG_EEPROM_93CX6=n
++CONFIG_KEYBOARD_GPIO=n
++
++# CONFIG_GPIO_CDEV is not set
++# CONFIG_GPIO_CDEV_V1 is not set
++# CONFIG_PM is not set
++# CONFIG_LEGACY_TIOCSTI is not set
++# CONFIG_LDISC_AUTOLOAD is not set
+diff --color -urN linux-6.19/drivers/tty/serial/stm32-usart.c ../linux-6.19/drivers/tty/serial/stm32-usart.c
+--- linux-6.19/drivers/tty/serial/stm32-usart.c	2026-02-09 05:03:27.000000000 +0800
++++ ../linux-6.19/drivers/tty/serial/stm32-usart.c	2026-02-10 00:18:12.203047137 +0800
+@@ -1957,7 +1957,7 @@
+ static int stm32_usart_console_setup(struct console *co, char *options)
+ {
+ 	struct stm32_port *stm32port;
+-	int baud = 9600;
++	int baud = 115200;
+ 	int bits = 8;
+ 	int parity = 'n';
+ 	int flow = 'n';
+diff --color -urN linux-6.19/drivers/tty/serial/stm32-usart.h ../linux-6.19/drivers/tty/serial/stm32-usart.h
+--- linux-6.19/drivers/tty/serial/stm32-usart.h	2026-02-09 05:03:27.000000000 +0800
++++ ../linux-6.19/drivers/tty/serial/stm32-usart.h	2026-02-10 00:17:45.344615866 +0800
+@@ -186,7 +186,7 @@
+ #define USART_HWCFGR1_CFG8	GENMASK(31, 28)	/* MP1 */
+ 
+ #define STM32_SERIAL_NAME "ttySTM"
+-#define STM32_MAX_PORTS 9
++#define STM32_MAX_PORTS 1
+ #define STM32H7_USART_FIFO_SIZE 16
+ 
+ #define RX_BUF_L 4096		 /* dma rx buffer length     */
+diff --color -urN linux-6.19/mm/page_alloc.c ../linux-6.19/mm/page_alloc.c
+--- linux-6.19/mm/page_alloc.c	2026-02-09 05:03:27.000000000 +0800
++++ ../linux-6.19/mm/page_alloc.c	2026-02-10 01:51:00.281435972 +0800
+@@ -302,7 +302,7 @@
+ 
+ int min_free_kbytes = 1024;
+ int user_min_free_kbytes = -1;
+-static int watermark_boost_factor __read_mostly = 15000;
++static int watermark_boost_factor __read_mostly = 0;
+ static int watermark_scale_factor = 10;
+ int defrag_mode;
+ 
+@@ -6547,6 +6547,7 @@
+ 	else
+ 		pr_warn("min_free_kbytes is not updated to %d because user defined value %d is preferred\n",
+ 				new_min_free_kbytes, user_min_free_kbytes);
++    min_free_kbytes = 16;
+ 
+ }

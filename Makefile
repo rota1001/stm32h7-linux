@@ -21,21 +21,21 @@ rootfs:
 	genromfs -d rootfs -f rootfs.img
 
 linux:
-	cd linux-6.18.7 && ./build.sh
+	cd linux-6.19 && ./build.sh
 
-linux-6.18.7/arch/arm/boot/xipImage:
-	cd linux-6.18.7 && ./build.sh
+linux-6.19/arch/arm/boot/xipImage:
+	cd linux-6.19 && ./build.sh
 
-kernel: rootfs linux-6.18.7/arch/arm/boot/xipImage
+kernel: rootfs linux-6.19/arch/arm/boot/xipImage
 	mkdir -p build
-	cp linux-6.18.7/arch/arm/boot/xipImage build/kernel.bin
+	cp linux-6.19/arch/arm/boot/xipImage build/kernel.bin
 	truncate -s 4M build/kernel.bin
-	cat linux-6.18.7/arch/arm/boot/dts/st/stm32h750vbt6.dtb >> build/kernel.bin
+	cat linux-6.19/arch/arm/boot/dts/st/stm32h750vbt6.dtb >> build/kernel.bin
 	truncate -s 6M build/kernel.bin
 	cat rootfs.img >> build/kernel.bin
 
 dtb:
-	make -C linux-6.18.7 ARCH=arm CROSS_COMPILE=arm-linux-gnueabi- dtbs
+	make -C linux-6.19 ARCH=arm CROSS_COMPILE=arm-linux-gnueabi- dtbs
 
 flash-dummy: dummy.bin
 	st-flash --reset write dummy.bin 0x8000000
