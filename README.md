@@ -10,6 +10,7 @@ In this project, I successfully run **Linux 6.19** on STM32H750, which only has 
 - A **minimal bootloader (only 12KB)** to load the linux kernel
 - Used **SPARSEMEM memory model** to utilize non-contiguous memory regions
 - POSIX library function support with **uClibc**
+- **Execute-in-Place** user program, running without loading readonly segments to RAM
 - Run toybox, which is a lightweight busybox
 
 ## How to Play the Pre-build Binary
@@ -25,8 +26,20 @@ cd pre-build
 chmod +x run.sh
 ./run.sh
 ```
+
+## Build it in one click
+I provide a simple build script, you can run it directly:
+```
+git clone --depth 1 https://github.com/rota1001/stm32h7-linux.git
+cd stm32h7-linux
+./build.sh
+```
+
 ## How to Build it Step by Step
-The compile process is a little bit complex, you can see [my note](https://hackmd.io/@rota1001/stm32h750-linux) for the details.
+If you are curious about the compile process, here it is.
+
+It is a little bit complex, you can see [my note](https://hackmd.io/@rota1001/stm32h750-linux) for the details.
+
 Here is the process:
 - Build the qemu
   
@@ -79,7 +92,7 @@ Here is the process:
 ## How to Play it on the Real Board
 First, you should have a board with STM32H750 SoC and the QSPI external flash.
 
-Second, flash the kernel image (build/kernel.bin) to QSPI external flash, you can tools like CH341 or T48 programmer. You can also program a firmware to write the flash directly.
+Second, flash the kernel image (build/kernel.bin) to QSPI external flash, you can use tools like CH341 or T48 programmer. You can also program a firmware to write the flash directly.
 
 Third, use tools like ST-LINK or J-Link to flash the bootloader to the internal flash.
 
