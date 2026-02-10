@@ -81,6 +81,16 @@ build_rootfs() {
         sudo mknod rootfs/dev/null c 1 3
     fi
     cp user/toybox/generated/unstripped/toybox rootfs/bin/toybox
+    cp user/toybox/generated/unstripped/toybox.gdb init.gdb
+    if [ ! -f "rootfs/bin/sh" ]; then
+        ln -s toybox rootfs/bin/sh
+    fi
+    if [ ! -f "rootfs/bin/cd" ]; then
+        ln -s toybox rootfs/bin/cd
+    fi
+    if [ ! -f "rootfs/bin/ls" ]; then
+        ln -s toybox rootfs/bin/ls
+    fi
     make rootfs
 }
 
