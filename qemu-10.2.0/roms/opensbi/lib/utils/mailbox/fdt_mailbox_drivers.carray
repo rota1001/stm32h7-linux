@@ -1,5 +1,0 @@
-HEADER: sbi_utils/mailbox/fdt_mailbox.h
-TYPE: const struct fdt_mailbox
-NAME: fdt_mailbox_drivers
-MEMBER-NAME: driver
-MEMBER-TYPE: const struct fdt_driver

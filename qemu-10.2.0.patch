@@ -1,0 +1,406 @@
+diff --color -urN qemu-10.2.0/configs/devices/arm-softmmu/default.mak ../qemu-10.2.0/configs/devices/arm-softmmu/default.mak
+--- qemu-10.2.0/configs/devices/arm-softmmu/default.mak	2025-12-24 03:48:56.000000000 +0800
++++ ../qemu-10.2.0/configs/devices/arm-softmmu/default.mak	2026-01-24 15:25:03.930650818 +0800
+@@ -1,3 +1,6 @@
++CONFIG_ARM_V7M=y
++CONFIG_STM32H750_SOC=y
++CONFIG_STM32H750_BOARD=y
+ # Default configuration for arm-softmmu
+ 
+ # Uncomment the following lines to disable these optional devices:
+diff --color -urN qemu-10.2.0/hw/arm/Kconfig ../qemu-10.2.0/hw/arm/Kconfig
+--- qemu-10.2.0/hw/arm/Kconfig	2025-12-24 03:48:56.000000000 +0800
++++ ../qemu-10.2.0/hw/arm/Kconfig	2026-02-05 23:01:19.543583867 +0800
+@@ -239,6 +239,20 @@
+     depends on TCG && ARM
+     select STM32F100_SOC
+ 
++config STM32H750_SOC
++    bool
++    select ARM_V7M
++    select UNIMP
++    select STM32L4X5_USART
++    select STM32F2XX_TIMER
++
++config STM32H750_BOARD
++    bool
++    default y
++    depends on TCG && ARM
++    select STM32H750_SOC
++    select GENERIC_LOADER
++
+ config STRONGARM
+     bool
+     select PXA2XX_TIMER
+diff --color -urN qemu-10.2.0/hw/arm/meson.build ../qemu-10.2.0/hw/arm/meson.build
+--- qemu-10.2.0/hw/arm/meson.build	2025-12-24 03:48:56.000000000 +0800
++++ ../qemu-10.2.0/hw/arm/meson.build	2026-01-25 00:53:31.150022945 +0800
+@@ -17,6 +17,8 @@
+ arm_common_ss.add(when: 'CONFIG_SBSA_REF', if_true: files('sbsa-ref.c'))
+ arm_common_ss.add(when: 'CONFIG_STELLARIS', if_true: files('stellaris.c'))
+ arm_common_ss.add(when: 'CONFIG_STM32VLDISCOVERY', if_true: files('stm32vldiscovery.c'))
++arm_common_ss.add(when: 'CONFIG_STM32H750_SOC', if_true: files('stm32h750_soc.c'))
++arm_common_ss.add(when: 'CONFIG_STM32H750_BOARD', if_true: files('stm32h750_board.c'))
+ arm_common_ss.add(when: 'CONFIG_ZYNQ', if_true: files('xilinx_zynq.c'))
+ arm_common_ss.add(when: 'CONFIG_SABRELITE', if_true: files('sabrelite.c'))
+ 
+diff --color -urN qemu-10.2.0/hw/arm/stm32h750_board.c ../qemu-10.2.0/hw/arm/stm32h750_board.c
+--- qemu-10.2.0/hw/arm/stm32h750_board.c	1970-01-01 08:00:00.000000000 +0800
++++ ../qemu-10.2.0/hw/arm/stm32h750_board.c	2026-01-24 21:15:54.851226388 +0800
+@@ -0,0 +1,41 @@
++#include "qemu/osdep.h"
++#include "qapi/error.h"
++#include "hw/boards.h"
++#include "hw/qdev-properties.h"
++#include "hw/qdev-clock.h"
++#include "hw/arm/stm32h750_soc.h"
++#include "hw/arm/boot.h"
++#include "hw/arm/machines-qom.h"
++
++struct STM32H750MachineState {
++    MachineState parent_obj;
++    STM32H750State soc;
++};
++
++#define SYSCLK_FRQ 25000000ULL
++
++static void stm32h750_board_init(MachineState *machine)
++{
++    DeviceState *dev = qdev_new(TYPE_STM32H750_SOC);
++    object_property_add_child(OBJECT(machine), "soc", OBJECT(dev));
++
++    Clock *sysclk = clock_new(OBJECT(machine), "SYSCLK");
++    clock_set_hz(sysclk, SYSCLK_FRQ);
++    qdev_connect_clock_in(dev, "sysclk", sysclk);
++
++    sysbus_realize_and_unref(SYS_BUS_DEVICE(dev), &error_fatal);
++    armv7m_load_kernel(STM32H750_SOC(dev)->armv7m.cpu, machine->kernel_filename, 0x08000000, 128 * 1024);
++}
++
++static void stm32h750_machine_init(MachineClass *mc)
++{
++    static const char * const valid_cpu_types[] = {
++        ARM_CPU_TYPE_NAME("cortex-m7"),
++        NULL
++    };
++    mc->desc = "Custom STM32H750 Board";
++    mc->init = stm32h750_board_init;
++    mc->valid_cpu_types = valid_cpu_types;
++}
++
++DEFINE_MACHINE_ARM("stm32h750", stm32h750_machine_init)
+diff --color -urN qemu-10.2.0/hw/arm/stm32h750_soc.c ../qemu-10.2.0/hw/arm/stm32h750_soc.c
+--- qemu-10.2.0/hw/arm/stm32h750_soc.c	1970-01-01 08:00:00.000000000 +0800
++++ ../qemu-10.2.0/hw/arm/stm32h750_soc.c	2026-02-07 02:25:14.199388333 +0800
+@@ -0,0 +1,131 @@
++#include "qemu/osdep.h"
++#include "qapi/error.h"
++#include "system/address-spaces.h"
++#include "system/system.h"
++#include "hw/arm/stm32h750_soc.h"
++#include "hw/qdev-clock.h"
++#include "hw/misc/unimp.h"
++
++static void stm32h750_soc_initfn(Object *obj)
++{
++    STM32H750State *s = STM32H750_SOC(obj);
++    object_initialize_child(obj, "armv7m", &s->armv7m, TYPE_ARMV7M);
++    object_initialize_child(obj, "usart1", &s->usart1, TYPE_STM32L4X5_USART);
++    object_initialize_child(obj, "timer5", &s->timer5, TYPE_STM32F2XX_TIMER);
++
++    s->sysclk = qdev_init_clock_in(DEVICE(s), "sysclk", NULL, NULL, 0);
++}
++
++static uint64_t stm32_rcc_read(void *opaque, hwaddr addr, unsigned int size)
++{
++    STM32H750State *s = opaque;
++
++    return s->rcc_regs[addr >> 2];
++}
++
++static void stm32_rcc_write(void *opaque, hwaddr addr, uint64_t val, unsigned int size)
++{
++    STM32H750State *s = opaque;
++    s->rcc_regs[addr >> 2] = (uint32_t)val;
++}
++static const MemoryRegionOps stm32_rcc_ops = {
++    .read = stm32_rcc_read,
++    .write = stm32_rcc_write,
++    .endianness = DEVICE_NATIVE_ENDIAN,
++    .valid = {
++        .min_access_size = 1,
++        .max_access_size = 4,
++    },
++};
++
++static void stm32h750_soc_realize(DeviceState *dev_soc, Error **errp)
++{
++    STM32H750State *s = STM32H750_SOC(dev_soc);
++    MemoryRegion *system_memory = get_system_memory();
++    DeviceState *armv7m;
++
++    armv7m = DEVICE(&s->armv7m);
++    qdev_prop_set_string(armv7m, "cpu-type", ARM_CPU_TYPE_NAME("cortex-m7"));
++    qdev_prop_set_uint32(armv7m, "num-irq", 150);
++    object_property_set_link(OBJECT(&s->armv7m), "memory",
++                            OBJECT(system_memory), &error_abort);
++    qdev_connect_clock_in(armv7m, "cpuclk", s->sysclk);
++    qdev_connect_clock_in(DEVICE(&s->usart1), "clk", s->sysclk);
++
++    if (!sysbus_realize(SYS_BUS_DEVICE(&s->armv7m), errp))
++        return;
++
++    memory_region_init_rom(&s->flash, OBJECT(dev_soc), "flash", FLASH_SIZE, &error_fatal);
++    memory_region_add_subregion(system_memory, FLASH_BASE, &s->flash);
++
++    memory_region_init_ram(&s->dtcmram, OBJECT(dev_soc), "dtcmram", DTCMRAM_SIZE, &error_fatal);
++    memory_region_add_subregion(system_memory, DTCMRAM_BASE, &s->dtcmram);
++
++    memory_region_init_ram(&s->sram1, OBJECT(dev_soc), "sram1", SRAM1_SIZE, &error_fatal);
++    memory_region_add_subregion(system_memory, SRAM1_BASE, &s->sram1);
++
++    memory_region_init_ram(&s->sram4, OBJECT(dev_soc), "sram4", SRAM4_SIZE, &error_fatal);
++    memory_region_add_subregion(system_memory, SRAM4_BASE, &s->sram4);
++
++    memory_region_init_ram(&s->axisram, OBJECT(dev_soc), "axisram", AXISRAM_SIZE, &error_fatal);
++    memory_region_add_subregion(system_memory, AXISRAM_BASE, &s->axisram);
++
++    memory_region_init_alias(&s->flash_alias, OBJECT(dev_soc), "flash_alias", &s->flash, 0, FLASH_SIZE);
++    memory_region_add_subregion(system_memory, 0, &s->flash_alias);
++
++    memory_region_init_rom(&s->qspi_flash, OBJECT(dev_soc), "qspi_flash", QSPI_FLASH_SIZE, &error_fatal);
++    memory_region_add_subregion(system_memory, QSPI_FLASH_BASE, &s->qspi_flash);
++
++    DeviceState *dev = DEVICE(&s->usart1);
++    qdev_prop_set_chr(dev, "chardev", serial_hd(0));
++    if (!sysbus_realize(SYS_BUS_DEVICE(&s->usart1), errp))
++        return;
++    
++    SysBusDevice *busdev = SYS_BUS_DEVICE(dev);
++    sysbus_mmio_map(busdev, 0, 0x40011000);
++    sysbus_connect_irq(busdev, 0, qdev_get_gpio_in(armv7m, 37));
++
++    dev = DEVICE(&s->timer5);
++    busdev = SYS_BUS_DEVICE(dev);
++    qdev_prop_set_uint64(dev, "clock-frequency", 64000000ULL);
++    if (!sysbus_realize(busdev, errp))
++        return;
++    sysbus_mmio_map(busdev, 0, 0x40000C00);
++    sysbus_connect_irq(busdev, 0, qdev_get_gpio_in(armv7m, 50));
++
++    // create_unimplemented_device("RCC", 0x58024400, 0x400);
++    MemoryRegion *rcc_mem = g_new(MemoryRegion, 1);
++    memory_region_init_io(rcc_mem, OBJECT(dev_soc), &stm32_rcc_ops, s, "RCC", 0x400);
++    memory_region_add_subregion(system_memory, 0x58024400, rcc_mem);
++    memset(s->rcc_regs, 0, sizeof(s->rcc_regs));
++    s->rcc_regs[0x00 >> 2] = (1 << 25) | (1 << 17) | (1 << 1) | 0xFFFF;
++    s->rcc_regs[0x18 >> 2] = (0 << 3);
++    s->rcc_regs[0x20 >> 2] = 0;
++    s->rcc_regs[0xE0 >> 2] = (1 << 3);
++    printf("yeee: %p\n", s->rcc_regs);
++    create_unimplemented_device("GPIOx", 0x58020000, 0x3000);
++    create_unimplemented_device("PWR", 0x58024800, 0x400);
++    create_unimplemented_device("EXTI", 0x58000000, 0x400);
++    create_unimplemented_device("SYSCFG", 0x58000400, 0x400);
++}
++
++static void stm32h750_soc_class_init(ObjectClass *oc, const void *data)
++{
++    DeviceClass *dc = DEVICE_CLASS(oc);
++    dc->realize = stm32h750_soc_realize;
++}
++
++static const TypeInfo stm32h750_soc_info = {
++    .name          = TYPE_STM32H750_SOC,
++    .parent        = TYPE_SYS_BUS_DEVICE,
++    .instance_size = sizeof(STM32H750State),
++    .instance_init = stm32h750_soc_initfn,
++    .class_init    = stm32h750_soc_class_init,
++};
++
++static void stm32h750_soc_types(void)
++{
++    type_register_static(&stm32h750_soc_info);
++}
++
++type_init(stm32h750_soc_types)
+diff --color -urN qemu-10.2.0/hw/char/stm32l4x5_usart.c ../qemu-10.2.0/hw/char/stm32l4x5_usart.c
+--- qemu-10.2.0/hw/char/stm32l4x5_usart.c	2025-12-24 03:48:56.000000000 +0800
++++ ../qemu-10.2.0/hw/char/stm32l4x5_usart.c	2026-02-09 23:00:35.860031347 +0800
+@@ -232,6 +232,9 @@
+         trace_stm32l4x5_usart_rx(s->rdr);
+     }
+ 
++    if (s->cr2 & R_CR2_RTOEN_MASK)
++        s->isr |= R_ISR_RTOF_MASK;
++
+     stm32l4x5_update_irq(s);
+ }
+ 
+@@ -444,6 +447,7 @@
+         /* Reset RXNE flag */
+         s->isr &= ~R_ISR_RXNE_MASK;
+         stm32l4x5_update_irq(s);
++        qemu_chr_fe_accept_input(&s->chr);
+         break;
+     case A_TDR:
+         retvalue = FIELD_EX32(s->tdr, TDR, TDR);
+diff --color -urN qemu-10.2.0/hw/timer/stm32f2xx_timer.c ../qemu-10.2.0/hw/timer/stm32f2xx_timer.c
+--- qemu-10.2.0/hw/timer/stm32f2xx_timer.c	2025-12-24 03:48:56.000000000 +0800
++++ ../qemu-10.2.0/hw/timer/stm32f2xx_timer.c	2026-02-06 21:19:25.736731103 +0800
+@@ -43,6 +43,7 @@
+ #define DB_PRINT(fmt, args...) DB_PRINT_L(1, fmt, ## args)
+ 
+ static void stm32f2xx_timer_set_alarm(STM32F2XXTimerState *s, int64_t now);
++static inline int64_t stm32f2xx_ns_to_ticks(STM32F2XXTimerState *s, int64_t t);
+ 
+ static void stm32f2xx_timer_interrupt(void *opaque)
+ {
+@@ -50,10 +51,21 @@
+ 
+     DB_PRINT("Interrupt\n");
+ 
+-    if (s->tim_dier & TIM_DIER_UIE && s->tim_cr1 & TIM_CR1_CEN) {
+-        s->tim_sr |= 1;
++    if ((s->tim_dier & TIM_DIER_CC1IE)
++        && (s->tim_cr1 & TIM_CR1_CEN)
++        && !s->ccr1_triggered) {
++        s->tim_sr |= TIM_SR_CC1IF;
+         qemu_irq_pulse(s->irq);
+-        stm32f2xx_timer_set_alarm(s, s->hit_time);
++        stm32f2xx_timer_set_alarm(s, qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL));
++        s->ccr1_triggered = 1;
++    }
++
++    if ((s->tim_dier & TIM_DIER_UIE) && (s->tim_cr1 & TIM_CR1_CEN)) {
++        s->tim_sr |= TIM_SR_UIF;
++        qemu_irq_pulse(s->irq);
++        s->tick_offset = stm32f2xx_ns_to_ticks(s, s->hit_time);
++        stm32f2xx_timer_set_alarm(s, qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL));
++        s->ccr1_triggered = 0;
+     }
+ 
+     if (s->tim_ccmr1 & (TIM_CCMR1_OC2M2 | TIM_CCMR1_OC2M1) &&
+@@ -75,6 +87,7 @@
+ {
+     uint64_t ticks;
+     int64_t now_ticks;
++    uint32_t target;
+ 
+     if (s->tim_arr == 0) {
+         return;
+@@ -82,15 +95,22 @@
+ 
+     DB_PRINT("Alarm set at: 0x%x\n", s->tim_cr1);
+ 
++    target = s->tim_arr;
++
+     now_ticks = stm32f2xx_ns_to_ticks(s, now);
+-    ticks = s->tim_arr - (now_ticks - s->tick_offset);
++    if ((now_ticks - s->tick_offset < s->tim_ccr1)
++        && (s->tim_ccr1 <= target))
++        target = s->tim_ccr1;
++
++
++    ticks = target - (now_ticks - s->tick_offset);
+ 
+     DB_PRINT("Alarm set in %d ticks\n", (int) ticks);
+ 
+     s->hit_time = muldiv64((ticks + (uint64_t) now_ticks) * (s->tim_psc + 1),
+                                1000000000ULL, s->freq_hz);
+ 
+-    timer_mod(s->timer, qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) + s->hit_time);
++    timer_mod(s->timer, s->hit_time);
+     DB_PRINT("Wait Time: %" PRId64 " ticks\n", s->hit_time);
+ }
+ 
+@@ -117,6 +137,7 @@
+     s->tim_dcr = 0;
+     s->tim_dmar = 0;
+     s->tim_or = 0;
++    s->ccr1_triggered = 0;
+ 
+     s->tick_offset = stm32f2xx_ns_to_ticks(s, now);
+ }
+@@ -232,6 +253,8 @@
+         return;
+     case TIM_CCR1:
+         s->tim_ccr1 = value;
++        s->ccr1_triggered = 0;
++        stm32f2xx_timer_set_alarm(s, now);
+         return;
+     case TIM_CCR2:
+         s->tim_ccr2 = value;
+diff --color -urN qemu-10.2.0/include/hw/arm/stm32h750_soc.h ../qemu-10.2.0/include/hw/arm/stm32h750_soc.h
+--- qemu-10.2.0/include/hw/arm/stm32h750_soc.h	1970-01-01 08:00:00.000000000 +0800
++++ ../qemu-10.2.0/include/hw/arm/stm32h750_soc.h	2026-02-07 02:25:20.009375075 +0800
+@@ -0,0 +1,46 @@
++#ifndef HW_ARM_STM32H750_SOC_H
++#define HW_ARM_STM32H750_SOC_H
++
++#include "hw/char/stm32l4x5_usart.h"
++#include "hw/timer/stm32f2xx_timer.h"
++#include "hw/or-irq.h"
++#include "hw/arm/armv7m.h"
++#include "qom/object.h"
++
++#define TYPE_STM32H750_SOC "stm32h750-soc"
++OBJECT_DECLARE_SIMPLE_TYPE(STM32H750State, STM32H750_SOC)
++
++#define FLASH_BASE 0x8000000
++#define FLASH_SIZE (128 * 1024)
++#define DTCMRAM_BASE 0x20000000
++#define DTCMRAM_SIZE (128 * 1024)
++#define SRAM1_BASE 0x30000000
++#define SRAM1_SIZE (288 * 1024)
++#define SRAM4_BASE 0x38000000
++#define SRAM4_SIZE (64 * 1024)
++#define AXISRAM_BASE 0x24000000
++#define AXISRAM_SIZE (512 * 1024)
++#define QSPI_FLASH_BASE 0x90000000
++#define QSPI_FLASH_SIZE (8 * 1024 * 1024)
++
++
++struct STM32H750State {
++    SysBusDevice parent_obj;
++    ARMv7MState armv7m;
++    Stm32l4x5UsartBaseState usart1;
++    STM32F2XXTimerState timer5;
++    
++    MemoryRegion flash;
++    MemoryRegion dtcmram;
++    MemoryRegion sram1;
++    MemoryRegion sram4;
++    MemoryRegion axisram;
++    MemoryRegion qspi_flash;
++
++    MemoryRegion flash_alias;
++
++    Clock *sysclk;
++    uint32_t rcc_regs[0x100];
++};
++
++#endif
+diff --color -urN qemu-10.2.0/include/hw/timer/stm32f2xx_timer.h ../qemu-10.2.0/include/hw/timer/stm32f2xx_timer.h
+--- qemu-10.2.0/include/hw/timer/stm32f2xx_timer.h	2025-12-24 03:48:56.000000000 +0800
++++ ../qemu-10.2.0/include/hw/timer/stm32f2xx_timer.h	2026-02-06 18:57:12.005149302 +0800
+@@ -59,7 +59,11 @@
+ #define TIM_CCMR1_OC2M0 (1 << 12)
+ #define TIM_CCMR1_OC2PE (1 << 11)
+ 
++#define TIM_SR_UIF 1
++#define TIM_SR_CC1IF (1 << 1)
++
+ #define TIM_DIER_UIE  1
++#define TIM_DIER_CC1IE (1 << 1)
+ 
+ #define TYPE_STM32F2XX_TIMER "stm32f2xx-timer"
+ typedef struct STM32F2XXTimerState STM32F2XXTimerState;
+@@ -78,6 +82,7 @@
+     int64_t tick_offset;
+     uint64_t hit_time;
+     uint64_t freq_hz;
++    uint32_t ccr1_triggered;
+ 
+     uint32_t tim_cr1;
+     uint32_t tim_cr2;

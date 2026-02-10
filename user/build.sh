@@ -4,10 +4,9 @@ set -e
 WORK_DIR="$(pwd)"
 BUILDROOT_DIR="$WORK_DIR/buildroot-2025.02"
 
-cp buildroot.config "$BUILDROOT_DIR"
+cp buildroot.config "$BUILDROOT_DIR/.config"
 cp uclibc.mk "$BUILDROOT_DIR/package/uclibc"
 cd "$BUILDROOT_DIR"
-make uclibc-dirclean
 make uclibc -j`nproc`
 
 cp ../Makefile.commonarch output/build/uclibc-1.0.51/libc/sysdeps/linux/
@@ -21,6 +20,12 @@ cp lib/crt1.o ../../host/arm-buildroot-uclinux-uclibcgnueabi/sysroot/usr/lib/crt
 cd "$WORK_DIR/toybox"
 make clean
 cp ../toybox.config .config
+if [ ! -f "../buildroot-2025.02/output/host/bin/arm-linux-cc" ]; then
+    ln -s toolchain-wrapper ../buildroot-2025.02/output/host/bin/arm-linux-cc
+fi
+if [ ! -f "../buildroot-2025.02/output/host/bin/arm-linux-cc.br_real" ]; then
+    ln -s arm-buildroot-uclinux-uclibcgnueabi-gcc.br_real ../buildroot-2025.02/output/host/bin/arm-linux-cc.br_real
+fi
 CROSS_COMPILE=../buildroot-2025.02/output/host/bin/arm-linux- \
 CFLAGS="-Os -mthumb -mcpu=cortex-m7 -fpic -mpic-register=r10 -mno-pic-data-is-text-relative" \
 LDFLAGS="-Wl,--gc-sections" make

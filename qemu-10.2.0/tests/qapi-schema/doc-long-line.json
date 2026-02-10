@@ -1,6 +1,0 @@
-##
-# @foo:
-#
-# This line has exactly 71 chars, including the leading hash and space.
-##
-{ 'command': 'foo' }
