@@ -53,9 +53,7 @@ build_qemu() {
 }
 
 build_linux() {
-    cd "$LINUX_DIR"
-    ./build.sh
-    cd "$ROOT_DIR"
+    make linux
 }
 
 build_bootloader() {

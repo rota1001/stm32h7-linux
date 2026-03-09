@@ -21,7 +21,12 @@ rootfs:
 	genromfs -d rootfs -f rootfs.img
 
 linux:
-	cd linux-6.19 && ./build.sh
+	cp linux.config linux-6.19/arch/arm/configs/custom_defconfig
+	cp stm32h750vbt6.dts linux-6.19/arch/arm/boot/dts/st
+	make -C linux-6.19 clean
+	make -C linux-6.19 ARCH=arm custom_defconfig
+	make -C linux-6.19 ARCH=arm CROSS_COMPILE=arm-linux-gnueabi- -j$(nproc)
+
 
 linux-6.19/arch/arm/boot/xipImage:
 	cd linux-6.19 && ./build.sh
