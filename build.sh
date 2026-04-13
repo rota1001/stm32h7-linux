@@ -28,7 +28,6 @@ fetch_sources() {
         tar xvf linux-6.19.tar.xz
         cd linux-6.19
         patch -p1  < ../linux-6.19.patch
-        chmod +x build.sh
         cd "$ROOT_DIR"
     fi
 
