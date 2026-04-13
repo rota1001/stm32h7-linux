@@ -21,26 +21,26 @@ rootfs:
 	genromfs -d rootfs -f rootfs.img
 
 linux:
-	cp linux.config linux-6.19/arch/arm/configs/custom_defconfig
-	cp stm32h750vbt6.dts linux-6.19/arch/arm/boot/dts/st
-	make -C linux-6.19 clean
-	make -C linux-6.19 ARCH=arm custom_defconfig
-	make -C linux-6.19 ARCH=arm CROSS_COMPILE=arm-linux-gnueabi- -j$(nproc)
+	cp linux.config linux-7.0/arch/arm/configs/custom_defconfig
+	cp stm32h750vbt6.dts linux-7.0/arch/arm/boot/dts/st
+	make -C linux-7.0 clean
+	make -C linux-7.0 ARCH=arm custom_defconfig
+	make -C linux-7.0 ARCH=arm CROSS_COMPILE=arm-linux-gnueabi- -j$(nproc)
 
 
-linux-6.19/arch/arm/boot/xipImage:
-	cd linux-6.19 && ./build.sh
+linux-7.0/arch/arm/boot/xipImage:
+	cd linux-7.0 && ./build.sh
 
-kernel: rootfs linux-6.19/arch/arm/boot/xipImage
+kernel: rootfs linux-7.0/arch/arm/boot/xipImage
 	mkdir -p build
-	cp linux-6.19/arch/arm/boot/xipImage build/kernel.bin
+	cp linux-7.0/arch/arm/boot/xipImage build/kernel.bin
 	truncate -s 4M build/kernel.bin
-	cat linux-6.19/arch/arm/boot/dts/st/stm32h750vbt6.dtb >> build/kernel.bin
+	cat linux-7.0/arch/arm/boot/dts/st/stm32h750vbt6.dtb >> build/kernel.bin
 	truncate -s 6M build/kernel.bin
 	cat rootfs.img >> build/kernel.bin
 
 dtb:
-	make -C linux-6.19 ARCH=arm CROSS_COMPILE=arm-linux-gnueabi- dtbs
+	make -C linux-7.0 ARCH=arm CROSS_COMPILE=arm-linux-gnueabi- dtbs
 
 flash-dummy: dummy.bin
 	st-flash --reset write dummy.bin 0x8000000

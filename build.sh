@@ -4,7 +4,7 @@ set -x
 
 ROOT_DIR="$(pwd)"
 QEMU_DIR="$ROOT_DIR/qemu-10.2.0"
-LINUX_DIR="$ROOT_DIR/linux-6.19"
+LINUX_DIR="$ROOT_DIR/linux-7.0"
 BOOTLOADER_DIR="$ROOT_DIR/bootloader"
 BUILDROOT_DIR="$ROOT_DIR/user/buildroot-2025.02"
 
@@ -24,10 +24,10 @@ fetch_sources() {
         set +x
         echo "Linux is not installed, fetching Linux source"
         set -x
-        wget https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.19.tar.xz
-        tar xvf linux-6.19.tar.xz
-        cd linux-6.19
-        patch -p1  < ../linux-6.19.patch
+        wget https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.0.tar.xz
+        tar xvf linux-7.0.tar.xz
+        cd linux-7.0
+        patch -p1  < ../linux-7.0.patch
         cd "$ROOT_DIR"
     fi
 

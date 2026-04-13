@@ -1,6 +1,6 @@
-diff --color -urN linux-6.19/arch/arm/boot/dts/st/Makefile ../linux-6.19/arch/arm/boot/dts/st/Makefile
---- linux-6.19/arch/arm/boot/dts/st/Makefile	2026-02-09 05:03:27.000000000 +0800
-+++ ../linux-6.19/arch/arm/boot/dts/st/Makefile	2026-02-10 20:55:44.951113556 +0800
+diff --color -urN linux-7.0/arch/arm/boot/dts/st/Makefile ../linux-7.0/arch/arm/boot/dts/st/Makefile
+--- linux-7.0/arch/arm/boot/dts/st/Makefile	2026-04-13 04:48:06.000000000 +0800
++++ ../linux-7.0/arch/arm/boot/dts/st/Makefile	2026-04-14 00:07:30.948437502 +0800
 @@ -71,7 +71,8 @@
  	stm32mp157c-osd32mp1-red.dtb \
  	stm32mp157c-phycore-stm32mp1-3.dtb \
@@ -11,9 +11,9 @@ diff --color -urN linux-6.19/arch/arm/boot/dts/st/Makefile ../linux-6.19/arch/ar
  dtb-$(CONFIG_ARCH_U8500) += \
  	ste-snowball.dtb \
  	ste-hrefprev60-stuib.dtb \
-diff --color -urN linux-6.19/arch/arm/include/asm/sparsemem.h ../linux-6.19/arch/arm/include/asm/sparsemem.h
---- linux-6.19/arch/arm/include/asm/sparsemem.h	2026-02-09 05:03:27.000000000 +0800
-+++ ../linux-6.19/arch/arm/include/asm/sparsemem.h	2026-02-10 20:55:44.951478153 +0800
+diff --color -urN linux-7.0/arch/arm/include/asm/sparsemem.h ../linux-7.0/arch/arm/include/asm/sparsemem.h
+--- linux-7.0/arch/arm/include/asm/sparsemem.h	2026-04-13 04:48:06.000000000 +0800
++++ ../linux-7.0/arch/arm/include/asm/sparsemem.h	2026-04-14 00:07:30.949253399 +0800
 @@ -19,8 +19,8 @@
   * These can be overridden in your mach/memory.h.
   */
@@ -25,9 +25,9 @@ diff --color -urN linux-6.19/arch/arm/include/asm/sparsemem.h ../linux-6.19/arch
  #endif
  
  #endif
-diff --color -urN linux-6.19/arch/arm/include/debug/stm32.S ../linux-6.19/arch/arm/include/debug/stm32.S
---- linux-6.19/arch/arm/include/debug/stm32.S	2026-02-09 05:03:27.000000000 +0800
-+++ ../linux-6.19/arch/arm/include/debug/stm32.S	2026-02-10 20:55:44.951747267 +0800
+diff --color -urN linux-7.0/arch/arm/include/debug/stm32.S ../linux-7.0/arch/arm/include/debug/stm32.S
+--- linux-7.0/arch/arm/include/debug/stm32.S	2026-04-13 04:48:06.000000000 +0800
++++ ../linux-7.0/arch/arm/include/debug/stm32.S	2026-04-14 00:07:30.949556897 +0800
 @@ -24,7 +24,7 @@
  .endm
  
@@ -37,10 +37,10 @@ diff --color -urN linux-6.19/arch/arm/include/debug/stm32.S ../linux-6.19/arch/a
  .endm
  
  .macro	waituartcts,rd,rx
-diff --color -urN linux-6.19/arch/arm/Kconfig ../linux-6.19/arch/arm/Kconfig
---- linux-6.19/arch/arm/Kconfig	2026-02-09 05:03:27.000000000 +0800
-+++ ../linux-6.19/arch/arm/Kconfig	2026-02-10 20:55:44.952029652 +0800
-@@ -1190,7 +1190,6 @@
+diff --color -urN linux-7.0/arch/arm/Kconfig ../linux-7.0/arch/arm/Kconfig
+--- linux-7.0/arch/arm/Kconfig	2026-04-13 04:48:06.000000000 +0800
++++ ../linux-7.0/arch/arm/Kconfig	2026-04-14 00:07:30.950184208 +0800
+@@ -1191,7 +1191,6 @@
  
  config ARCH_SPARSEMEM_ENABLE
  	def_bool !ARCH_FOOTBRIDGE
@@ -48,9 +48,9 @@ diff --color -urN linux-6.19/arch/arm/Kconfig ../linux-6.19/arch/arm/Kconfig
  
  config HIGHMEM
  	bool "High Memory Support"
-diff --color -urN linux-6.19/arch/arm/Makefile ../linux-6.19/arch/arm/Makefile
---- linux-6.19/arch/arm/Makefile	2026-02-09 05:03:27.000000000 +0800
-+++ ../linux-6.19/arch/arm/Makefile	2026-02-10 20:55:44.953748193 +0800
+diff --color -urN linux-7.0/arch/arm/Makefile ../linux-7.0/arch/arm/Makefile
+--- linux-7.0/arch/arm/Makefile	2026-04-13 04:48:06.000000000 +0800
++++ ../linux-7.0/arch/arm/Makefile	2026-04-14 00:07:30.950445604 +0800
 @@ -159,7 +159,7 @@
  # Note: the 32kB below this value is reserved for use by the kernel
  # during boot, and this offset is critical to the functioning of
@@ -60,9 +60,9 @@ diff --color -urN linux-6.19/arch/arm/Makefile ../linux-6.19/arch/arm/Makefile
  # RTD1195 has Boot ROM at start of address space
  textofs-$(CONFIG_ARCH_REALTEK)  := 0x00108000
  # SA1111 DMA bug: we don't want the kernel to live in precious DMA-able memory
-diff --color -urN linux-6.19/drivers/tty/serial/stm32-usart.c ../linux-6.19/drivers/tty/serial/stm32-usart.c
---- linux-6.19/drivers/tty/serial/stm32-usart.c	2026-02-09 05:03:27.000000000 +0800
-+++ ../linux-6.19/drivers/tty/serial/stm32-usart.c	2026-02-10 20:55:44.954972179 +0800
+diff --color -urN linux-7.0/drivers/tty/serial/stm32-usart.c ../linux-7.0/drivers/tty/serial/stm32-usart.c
+--- linux-7.0/drivers/tty/serial/stm32-usart.c	2026-04-13 04:48:06.000000000 +0800
++++ ../linux-7.0/drivers/tty/serial/stm32-usart.c	2026-04-14 00:07:30.951094151 +0800
 @@ -1957,7 +1957,7 @@
  static int stm32_usart_console_setup(struct console *co, char *options)
  {
@@ -72,9 +72,9 @@ diff --color -urN linux-6.19/drivers/tty/serial/stm32-usart.c ../linux-6.19/driv
  	int bits = 8;
  	int parity = 'n';
  	int flow = 'n';
-diff --color -urN linux-6.19/drivers/tty/serial/stm32-usart.h ../linux-6.19/drivers/tty/serial/stm32-usart.h
---- linux-6.19/drivers/tty/serial/stm32-usart.h	2026-02-09 05:03:27.000000000 +0800
-+++ ../linux-6.19/drivers/tty/serial/stm32-usart.h	2026-02-10 20:55:44.955968042 +0800
+diff --color -urN linux-7.0/drivers/tty/serial/stm32-usart.h ../linux-7.0/drivers/tty/serial/stm32-usart.h
+--- linux-7.0/drivers/tty/serial/stm32-usart.h	2026-04-13 04:48:06.000000000 +0800
++++ ../linux-7.0/drivers/tty/serial/stm32-usart.h	2026-04-14 00:07:30.951817329 +0800
 @@ -186,7 +186,7 @@
  #define USART_HWCFGR1_CFG8	GENMASK(31, 28)	/* MP1 */
  
@@ -84,10 +84,10 @@ diff --color -urN linux-6.19/drivers/tty/serial/stm32-usart.h ../linux-6.19/driv
  #define STM32H7_USART_FIFO_SIZE 16
  
  #define RX_BUF_L 4096		 /* dma rx buffer length     */
-diff --color -urN linux-6.19/mm/page_alloc.c ../linux-6.19/mm/page_alloc.c
---- linux-6.19/mm/page_alloc.c	2026-02-09 05:03:27.000000000 +0800
-+++ ../linux-6.19/mm/page_alloc.c	2026-02-10 20:55:44.956955921 +0800
-@@ -302,7 +302,7 @@
+diff --color -urN linux-7.0/mm/page_alloc.c ../linux-7.0/mm/page_alloc.c
+--- linux-7.0/mm/page_alloc.c	2026-04-13 04:48:06.000000000 +0800
++++ ../linux-7.0/mm/page_alloc.c	2026-04-14 00:07:30.952862010 +0800
+@@ -301,7 +301,7 @@
  
  int min_free_kbytes = 1024;
  int user_min_free_kbytes = -1;
@@ -96,10 +96,11 @@ diff --color -urN linux-6.19/mm/page_alloc.c ../linux-6.19/mm/page_alloc.c
  static int watermark_scale_factor = 10;
  int defrag_mode;
  
-@@ -6547,6 +6547,7 @@
+@@ -6555,6 +6555,7 @@
  	else
  		pr_warn("min_free_kbytes is not updated to %d because user defined value %d is preferred\n",
  				new_min_free_kbytes, user_min_free_kbytes);
 +    min_free_kbytes = 16;
  
  }
+ 

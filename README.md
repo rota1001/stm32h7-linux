@@ -1,7 +1,7 @@
 # Linux on STM32H750
 > My note: https://hackmd.io/@rota1001/stm32h750-linux
 
-In this project, I successfully run **Linux 6.19** on STM32H750, which only has **1MB of RAM**, and run toybox with uClibc support.
+In this project, I successfully run **Linux 7.0** on STM32H750, which only has **1MB of RAM**, and run toybox with uClibc support.
 
 <img src="./image.png" >
 
@@ -54,10 +54,10 @@ Here is the process:
   ```
 - Get kernel source and patch it
   ```
-  wget https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.19.tar.xz
-  tar xvf linux-6.19.tar.xz
-  cd linux-6.19
-  patch -p1  < ../linux-6.19.patch
+  wget https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.0.tar.xz
+  tar xvf linux-7.0.tar.xz
+  cd linux-7.0
+  patch -p1  < ../linux-7.0.patch
   ```
 - Build the kernel
   ```
