@@ -13,6 +13,13 @@ In this project, I successfully run **Linux 7.0** on STM32H750, which only has *
 - **Execute-in-Place** user program, running without loading readonly segments to RAM
 - Run toybox, which is a lightweight busybox
 
+## Dependencies
+There are some dependencies that needed to be installed.
+```
+sudo apt update
+sudo apt install -y gcc-arm-linux-gnueabi 
+```
+
 ## How to Play the Pre-build Binary
 I provide a pre-build binary, if you trust me.
 
