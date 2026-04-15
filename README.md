@@ -27,7 +27,7 @@ First, you should have `gdb-multiarch`.
 
 Second, download the pre-build binary, and have fun!
 ```
-wget https://github.com/rota1001/stm32h7-linux/raw/refs/heads/main/pre-build.tar.gz
+wget https://github.com/rota1001/stm32h7-linux/releases/download/pre-build/pre-build.tar.gz
 tar zxvf pre-build.tar.gz
 cd pre-build
 chmod +x run.sh
