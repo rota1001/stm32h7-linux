@@ -34,6 +34,21 @@ chmod +x run.sh
 ./run.sh
 ```
 
+If you want to use gdb to do the debug, you can run the following command in the pre-build directory:
+```
+./qemu-system-arm -machine stm32h750 -s -S \
+-kernel bootloader.bin -serial stdio -display none \
+-device loader,file=kernel.bin,addr=0x90000000
+```
+This will open a gdb server at localhost:1234.
+You can open another shell and run the following command also in the pre-build directory:
+```
+gdb-multiarch -x gdbscript.py
+```
+Then you can start the kernel debug.
+
+Also, you can take a look at the implementation in gdbscript.py to go further.
+
 ## Build it in one click
 I provide a simple build script, you can run it directly:
 ```
