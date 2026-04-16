@@ -1,7 +1,7 @@
 # Linux on STM32H750
 > My note: https://hackmd.io/@rota1001/stm32h750-linux
 
-In this project, I successfully run **Linux 7.0** on STM32H750, which only has **1MB of RAM**, and run toybox with uClibc support.
+In this project, I successfully run **Linux 7.0** on STM32H750, which only has **1MB of RAM**, and run **dynamically linked Busybox** with **uClibc** support.
 
 <img src="./image.png" >
 
@@ -11,7 +11,7 @@ In this project, I successfully run **Linux 7.0** on STM32H750, which only has *
 - Used **SPARSEMEM memory model** to utilize non-contiguous memory regions
 - POSIX library function support with **uClibc**
 - **Execute-in-Place** user program, running without loading readonly segments to RAM
-- Run toybox, which is a lightweight busybox
+- Run **dynamically linked Busybox** in FDPIC format backed by uClibc support
 
 ## Dependencies
 There are some dependencies that needed to be installed.
@@ -88,19 +88,20 @@ Here is the process:
 - Create the rootfs directory
   ```
   mkdir -p rootfs
-  mkdir -p rootfs/dev
+  mkdir -p rootfs/lib
   mkdir -p rootfs/bin
-  sudo mknod rootfs/dev/console c 5 1
-  sudo mknod rootfs/dev/null c 1 3
   ```
-- Build the uClibc and the toybox
+- Build the uClibc and the Busybox
   ```
   cd user
-  wget https://buildroot.org/downloads/buildroot-2025.02.tar.gz
-  tar xvf buildroot-2025.02.tar.gz
   ./build.sh
   cd ..
-  cp user/toybox/generated/unstripped/toybox rootfs/bin/toybox
+  cp user/buildroot-2026.02/output/target/lib/libuClibc-1.0.56.so rootfs/lib/libc.so.0
+  cp user/buildroot-2026.02/output/target/lib/ld-uClibc-1.0.56.so rootfs/lib/ld-uClibc.so.0
+  cp user/buildroot-2026.02/output/build/busybox-1.37.0/busybox rootfs/bin/
+  ln -s busybox rootfs/bin/sh
+  ln -s busybox rootfs/bin/ls
+  ln -s busybox rootfs/bin/uname
   make rootfs
   ```
 - Build the kernel image
