@@ -6,7 +6,7 @@ ROOT_DIR="$(pwd)"
 QEMU_DIR="$ROOT_DIR/qemu-10.2.0"
 LINUX_DIR="$ROOT_DIR/linux-7.0"
 BOOTLOADER_DIR="$ROOT_DIR/bootloader"
-BUILDROOT_DIR="$ROOT_DIR/user/buildroot-2025.02"
+BUILDROOT_DIR="$ROOT_DIR/user/buildroot-2026.02"
 
 fetch_sources() {
     if [ ! -d "$QEMU_DIR" ]; then
@@ -36,8 +36,8 @@ fetch_sources() {
         echo "Buildroot is not installed, fetching buildroot source"
         set -x
         cd "$ROOT_DIR/user"
-        wget https://buildroot.org/downloads/buildroot-2025.02.tar.gz
-        tar xvf buildroot-2025.02.tar.gz
+        wget https://buildroot.org/downloads/buildroot-2026.02.tar.gz
+        tar xvf buildroot-2026.02.tar.gz
         cd "$ROOT_DIR"
     fi
 
@@ -61,7 +61,7 @@ build_bootloader() {
     cd "$ROOT_DIR"
 }
 
-build_toybox() {
+build_busybox() {
     cd "$ROOT_DIR/user"
     ./build.sh
     cd "$ROOT_DIR"
@@ -69,24 +69,28 @@ build_toybox() {
 
 build_rootfs() {
     mkdir -p rootfs
-    mkdir -p rootfs/dev
+    mkdir -p rootfs/lib
     mkdir -p rootfs/bin
-    if [ ! -e "rootfs/dev/console" ]; then
-        sudo mknod rootfs/dev/console c 5 1
-    fi
-    if [ ! -e "rootfs/dev/null" ]; then
-        sudo mknod rootfs/dev/null c 1 3
-    fi
-    cp user/toybox/generated/unstripped/toybox rootfs/bin/toybox
-    cp user/toybox/generated/unstripped/toybox.gdb init.gdb
+
+
+    cp "$BUILDROOT_DIR/output/target/lib/libuClibc-1.0.56.so" rootfs/lib/libc.so.0
+    cp "$BUILDROOT_DIR/output/target/lib/ld-uClibc-1.0.56.so" rootfs/lib/ld-uClibc.so.0
+
+    cp "$BUILDROOT_DIR/output/build/busybox-1.37.0/busybox" rootfs/bin/
     if [ ! -f "rootfs/bin/sh" ]; then
-        ln -s toybox rootfs/bin/sh
+        ln -s busybox rootfs/bin/sh
     fi
     if [ ! -f "rootfs/bin/cd" ]; then
-        ln -s toybox rootfs/bin/cd
+        ln -s busybox rootfs/bin/cd
     fi
     if [ ! -f "rootfs/bin/ls" ]; then
-        ln -s toybox rootfs/bin/ls
+        ln -s busybox rootfs/bin/ls
+    fi
+    if [ ! -f "rootfs/bin/pwd" ]; then
+        ln -s busybox rootfs/bin/pwd
+    fi
+    if [ ! -f "rootfs/bin/uname" ]; then
+        ln -s busybox rootfs/bin/uname
     fi
     make rootfs
 }
@@ -98,7 +102,7 @@ build() {
     build_qemu
     build_linux
     build_bootloader
-    build_toybox
+    build_busybox
     build_rootfs
     make kernel
 }
