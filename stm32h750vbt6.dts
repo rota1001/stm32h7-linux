@@ -8,7 +8,7 @@
     model = "STM32H750 board";
     compatible = "st,stm32h750vbt6", "st,stm32h750";
     chosen {
-        bootargs = "console=ttySTM0,115200 earlyprintk cma=64K phram.phram=romfs,0x90600000,0x80000 root=mtd:romfs rootfstype=romfs init=/bin/sh";
+        bootargs = "console=ttySTM0,115200 earlyprintk cma=64K phram.phram=romfs,0x90600000,0x200000 root=mtd:romfs rootfstype=romfs init=/bin/sh";
         stdout-path = "serial0:115200n8";
     };
 
