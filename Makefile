@@ -23,6 +23,9 @@ rootfs:
 linux:
 	cp linux.config linux-7.0/arch/arm/configs/custom_defconfig
 	cp stm32h750vbt6.dts linux-7.0/arch/arm/boot/dts/st
+	cp stm32h7-minimal-pinctrl.dtsi linux-7.0/arch/arm/boot/dts/st
+	cp stm32h750-minimal.dtsi linux-7.0/arch/arm/boot/dts/st
+
 	make -C linux-7.0 clean
 	make -C linux-7.0 ARCH=arm custom_defconfig
 	make -C linux-7.0 ARCH=arm CROSS_COMPILE=arm-linux-gnueabi- -j$(nproc)

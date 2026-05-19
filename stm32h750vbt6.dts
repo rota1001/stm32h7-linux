@@ -1,6 +1,6 @@
 /dts-v1/;
-#include "stm32h750.dtsi"
-#include "stm32h7-pinctrl.dtsi"
+#include "stm32h750-minimal.dtsi"
+#include "stm32h7-minimal-pinctrl.dtsi"
 #include <dt-bindings/interrupt-controller/irq.h>
 #include <dt-bindings/gpio/gpio.h>
 
@@ -35,6 +35,3 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
-
-&sdmmc1 { status = "disabled"; };
-&i2c1 { status = "disabled"; };
