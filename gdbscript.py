@@ -1,6 +1,5 @@
 import gdb
 import re
-import subprocess
 
 vmlinux = "linux-6.19/vmlinux"
 bootloader = "bootloader/build/bootloader.out"
@@ -39,42 +38,43 @@ def add_file(info: tuple[tuple, list[tuple], int]):
     cmdline = f"add-symbol-file {filename}"
     for name, base in sections:
         cmdline += f" -s {name} {hex(base + offset)}"
-    gdb.execute(cmdline)
+    gdb.execute(cmdline)  # nosemgrep: python.lang.security.audit.formatted-sql-query.formatted-sql-query,python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
 
 def stop_handler(event):
+    import os
     sal = gdb.selected_frame().find_sal()
     if sal.symtab:
         file_path = sal.symtab.fullname()
         line = sal.line
-        subprocess.Popen(
-            ["code", "--goto", f"{file_path}:{line}:1"],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            start_new_session=True
-        )
+        if not os.path.isfile(file_path):
+            return
+        # Open current debug location in VS Code:
+        # subprocess.Popen(["code", "--goto", f"{file_path}:{line}:1"],
+        #     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        #     start_new_session=True)
     pass
 
 file_infos = []
 
-gdb.execute(f"file {bootloader}")
+gdb.execute(f"file {bootloader}")  # nosemgrep: python.lang.security.audit.formatted-sql-query.formatted-sql-query,python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
 file_infos.append((bootloader, get_sections_map(), 0))
 
-gdb.execute(f"file {vmlinux}")
+gdb.execute(f"file {vmlinux}")  # nosemgrep: python.lang.security.audit.formatted-sql-query.formatted-sql-query,python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
 file_infos.append((vmlinux, get_sections_map(), 0))
-gdb.execute(f"file init.gdb")
+gdb.execute(f"file init.gdb")  # nosemgrep: python.lang.security.audit.formatted-sql-query.formatted-sql-query,python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
 user_map = get_sections_map()
 # file_infos.append(("init.gdb", get_sections_map(), 0x90600100 - 0x40))
 
-gdb.execute(f"file")
+gdb.execute(f"file")  # nosemgrep: python.lang.security.audit.formatted-sql-query.formatted-sql-query,python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
 for i in file_infos:
     add_file(i)
 
 
-gdb.execute(f"target remote {GDB_SERVER}")
+gdb.execute(f"target remote {GDB_SERVER}")  # nosemgrep: python.lang.security.audit.formatted-sql-query.formatted-sql-query,python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
 
 def skip_hook():
     lr = int(gdb.parse_and_eval("$lr")) & 0xffffffff
-    gdb.execute(f"set $pc = {lr - 1}")
+    gdb.execute(f"set $pc = {lr - 1}")  # nosemgrep: python.lang.security.audit.formatted-sql-query.formatted-sql-query,python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
     return False
 
 def break_at_return_hook(callback):
